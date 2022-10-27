@@ -70,17 +70,17 @@ int ls_file(MINODE *mip, char *name)
   printf("%4d ", inode->i_gid);
   printf("%8d ", inode->i_size);
   printf("%4d ", inode->i_links_count);
-  time_t t = inode->i_ctime;
-  ftime = ctime(&t);
-  ftime[strlen(ftime)-1] = 0;
+  time_t t = inode->i_ctime; // time in seconds
+  ftime = ctime(&t); // convert to calendar time
+  ftime[strlen(ftime)-1] = 0; // kill \n at end
   printf("%s ", ftime);
-  printf("%s", basename(name));
+  printf("%s", basename(name)); // print file basename
   if(S_ISLNK(inode->i_mode)){
     char buf[BLKSIZE];
-    readlink(mip, buf);
+    readlink(mip, buf); 
     printf(" -> %s", buf);
   }
-  printf(" [%d %2d] ", mip->dev, mip->ino);
+  printf(" [%d %2d] ", mip->dev, mip->ino); // print [dev, ino]
 }
 
 int ls_dir(MINODE *mip)
@@ -93,21 +93,19 @@ int ls_dir(MINODE *mip)
   char *cp;
   MINODE *dip;
 
-  get_block(mip->dev, mip->INODE.i_block[0], buf);
+  get_block(mip->dev, mip->INODE.i_block[0], buf); // get data block into buf
   dp = (DIR *)buf;
   cp = buf;
   printf("i_block[0] = %d\n", i, mip->INODE.i_block[0]);
   //printf("TESTESTTES\n");
   while (cp < buf + BLKSIZE){
-     strncpy(temp, dp->name, dp->name_len);
-     temp[dp->name_len] = 0;
+     strncpy(temp, dp->name, dp->name_len); // copy name[ ] into temp[ ]
+     temp[dp->name_len] = 0; 
 
-     dip = iget(dev, dp->inode);
-     ls_file(dip, temp);
-     
-
-     cp += dp->rec_len;
-     dp = (DIR *)cp;
+     dip = iget(dev, dp->inode); // get the minode of the file
+     ls_file(dip, temp); // print the file's info
+     cp += dp->rec_len; // move to the next entry
+     dp = (DIR *)cp; // cast the dp to the next entry
   }
 
   printf("\n");
@@ -119,7 +117,7 @@ int ls()
   MINODE *mip;
   printf("ls %s\n", pathname);
   if (pathname[0]==0) // ls CWD
-    ls_dir(running->cwd);
+    ls_dir(running->cwd); 
   else{
     ino = getino(pathname); // get ino of pathname
     if (ino==0){ // pathname does not exist
@@ -127,11 +125,11 @@ int ls()
       return -1;
     }
     mip = iget(dev, ino); // get its minode
-    if (S_ISDIR(mip->INODE.i_mode))
-      ls_dir(mip);
+    if (S_ISDIR(mip->INODE.i_mode)) // if it's a directory
+      ls_dir(mip); 
     else
       ls_file(mip, basename(pathname));
-    iput(mip);
+    iput(mip); // dispose of memory
   }
   printf("\n");
 }
@@ -155,11 +153,11 @@ void rpwd(MINODE *wd)
   }
   int ino, pino;
   char buf[BLKSIZE], temp[256];
-  get_block(dev, wd->INODE.i_block[0], buf); 
-  pino = findino(wd, &ino);
-  MINODE *pip = iget(dev, pino);
-  findmyname(pip, ino, temp);
-  rpwd(pip);
+  get_block(dev, wd->INODE.i_block[0], buf); // get the data block of the wd
+  pino = findino(wd, &ino); // get the parent ino
+  MINODE *pip = iget(dev, pino); // find the parent in memory
+  findmyname(pip, ino, temp); // find the name of the wd in the parent
+  rpwd(pip); // recursively call rpwd on the parent
   printf("/%s", temp);
 }
 

@@ -258,8 +258,8 @@ int findino(MINODE *mip, u32 *myino) // myino = i# of . return i# of ..
          dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
 
       if (strcmp(temp, ".") == 0){  // if the name is . set myino to the inode
-         printf("found %s ino = %d\n", temp, dp->inode); // print the inode
-         *myino = dp->inode; // set myino to the inode
+         printf("found %s ino = %d\n", temp, dp->inode);
+         *myino = dp->inode; // set myino to the inode 
       }
       else if (strcmp(temp, "..") == 0) // if the name is .. return to the inode
       {
