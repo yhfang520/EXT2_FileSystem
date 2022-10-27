@@ -33,6 +33,11 @@ int cd(char *pathname)
     }
     mip = iget(dev, ino); // get its minode
   }
+  if (!S_ISDIR(mip->INODE.i_mode)){ // not a DIR
+    printf("%s is not a directory\n", pathname);
+    iput(mip);
+    return -1;
+  }
   iput(running->cwd); // dispose of old minode
   running->cwd = mip; // new minode becomes CWD
 }
@@ -136,7 +141,7 @@ int ls()
 
 char *pwd(MINODE *wd)
 {
-  printf("pwd: READ HOW TO pwd in textbook!!!!\n");
+  // printf("pwd: READ HOW TO pwd in textbook!!!!\n");
   if (wd == root){
     printf("/\n");
     return;
