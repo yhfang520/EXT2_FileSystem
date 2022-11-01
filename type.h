@@ -16,10 +16,13 @@ DIR   *dp;
 #define FREE        0
 #define READY       1
 
+//file system table sizes 
 #define BLKSIZE  1024
 #define NMINODE   128
 #define NPROC       2
+#define NMTABLE    10
 
+//In-memory inodes structure 
 typedef struct minode{
   INODE INODE;           // INODE structure on disk
   int dev, ino;          // (dev, ino) of INODE
@@ -30,6 +33,7 @@ typedef struct minode{
   struct mntable *mptr;  // for level-3
 }MINODE;
 
+//PROC structure 
 typedef struct proc{
   struct proc *next;
   int          pid;      // process ID  
@@ -37,3 +41,18 @@ typedef struct proc{
   int          gid;
   MINODE      *cwd;      // CWD directory pointer  
 }PROC;
+
+//Mount Table structure 
+typedef struct mtable{
+  int   dev;  //device number; 0 for FREE
+  int   ninodes;  //from superblock
+  int   nblocks;  
+  int   free_blocks;  //from superblock and GD
+  int   free_inodes;
+  int   bmap; //from group descriptor 
+  int   imap;
+  int   iblock; //inodes start block 
+  MINODE *mntDirPtr;  //mount point DIR pointer   
+  char  devName[64];  //device name
+  char  mntName[64];  //mount point DIR name 
+}MTABLE; 

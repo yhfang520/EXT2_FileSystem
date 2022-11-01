@@ -1,0 +1,3 @@
+cp disk.ori disk    # use a new copy of disk.ori
+mk                  # cc main.c 
+a.out               # run a.out

@@ -14,12 +14,13 @@
 extern MINODE minode[NMINODE];
 extern MINODE *root;
 extern PROC   proc[NPROC], *running;
+MTABLE  mtable[NMTABLE];
 
 extern char gpath[128];
 extern char *name[64];
 extern int n;
 
-extern int fd, dev;
+extern int fd, dev, rootdev;
 extern int nblocks, ninodes, bmap, imap, iblk;
 
 extern char line[128], cmd[32], pathname[128];
@@ -69,13 +70,13 @@ MINODE *iget(int dev, int ino)
 
   for (i=0; i<NMINODE; i++){
     mip = &minode[i];
-    if (mip->refCount && mip->dev == dev && mip->ino == ino){
+    if (mip->dev==dev && mip->ino==ino){
        mip->refCount++;
        //printf("found [%d %d] as minode[%d] in core\n", dev, ino, i);
        return mip;
     }
   }
-    
+
   for (i=0; i<NMINODE; i++){
     mip = &minode[i];
     if (mip->refCount == 0){
@@ -95,10 +96,10 @@ MINODE *iget(int dev, int ino)
        // copy INODE to mp->INODE
        mip->INODE = *ip;
        return mip;
-    }
-  }   
-  printf("PANIC: no more free minodes\n");
-  return 0;
+      } 
+   }
+   printf("PANIC: no more free minodes\n");
+   return 0; 
 }
 
 void iput(MINODE *mip)  // iput(): release a minode
@@ -110,10 +111,10 @@ void iput(MINODE *mip)  // iput(): release a minode
  if (mip==0) 
      return;
 
- mip->refCount--;
+ mip->refCount--; //dec refCount by 1
  
- if (mip->refCount > 0) return;
- if (!mip->dirty)       return;
+ if (mip->refCount > 0) return;  //still has user 
+ if (!mip->dirty)       return;  //INODE had not changed; no need to write back 
  
  /* write INODE back to disk */
  /**************** NOTE ******************************
@@ -123,6 +124,16 @@ void iput(MINODE *mip)  // iput(): release a minode
 
   Write YOUR code here to write INODE back to disk
  *****************************************************/
+
+ block = (mip->ino - 1) / 8 + iblk; 
+ offset = (mip->ino - 1) % 8;
+
+ // get block containning this inode 
+ get_block(mip->dev, block, buf);
+ ip = (INODE *)buf + offset;  //ip points at INODE 
+ *ip = mip->INODE;   //copy INODE to inode in block
+ put_block(mip->dev, block, buf);   //write back to disk 
+ mip->refCount = 0;   //mip->redCount = 0;  
 } 
 
 int search(MINODE *mip, char *name)
@@ -130,33 +141,50 @@ int search(MINODE *mip, char *name)
    int i; 
    char *cp, c, sbuf[BLKSIZE], temp[256];
    DIR *dp;
-   INODE *ip;
-
-   printf("search for %s in MINODE = [%d, %d]\n", name,mip->dev,mip->ino);
-   ip = &(mip->INODE);
+   // INODE *ip;
 
    /*** search for name in mip's data blocks: ASSUME i_block[0] ONLY ***/
+   printf("search for %s in MINODE = [%d, %d]\n", name, mip->dev, mip->ino);
+   // ip=&(mip->inode);
 
-   get_block(dev, ip->i_block[0], sbuf);
-   dp = (DIR *)sbuf;
-   cp = sbuf;
-   printf("  ino   rlen  nlen  name\n");
+   for (i=0; i < 12; i++){
+      if (mip->INODE.i_block[i]==0)
+         return 0; 
+      
+      get_block(mip->dev, mip->INODE.i_block[0], sbuf);
+      dp = (DIR *)sbuf;
+      cp = sbuf;
+      printf("search: i=%d i_block[%d]=%d\n", i, i, mip->INODE.i_block[0]);
+      printf("  i_number  rec_len  name_len    name\n");
 
-   while (cp < sbuf + BLKSIZE){
-     strncpy(temp, dp->name, dp->name_len); // dp->name is NOT a string
-     temp[dp->name_len] = 0;                // temp is a STRING
-     printf("%4d  %4d  %4d    %s\n", 
-	    dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
+      while (cp < sbuf + BLKSIZE){
+         strncpy(temp, dp->name, dp->name_len); // dp->name is NOT a string
+         temp[dp->name_len] = 0;                // temp is a STRING
+         printf("%4d        %4d      %4d       %s\n", 
+            dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
 
-     if (strcmp(temp, name)==0){            // compare name with temp !!!
-        printf("found %s : ino = %d\n", temp, dp->inode);
-        return dp->inode;
-     }
+         if (strcmp(temp, name)==0){            // compare name with temp !!!
+            printf("found %s : ino = %d\n", temp, dp->inode);
+            return dp->inode;
+         }
 
-     cp += dp->rec_len;
-     dp = (DIR *)cp;
+         cp += dp->rec_len;
+         dp = (DIR *)cp;
+      }
    }
    return 0;
+}
+
+MTABLE *getmtable(int dev)
+{
+   MTABLE *nm;
+   for (int i=0; i < NMTABLE; i++){
+      nm = &mtable[i];
+      if (nm->dev == dev){
+         return nm; 
+      }
+   }
+   return 0; 
 }
 
 int getino(char *pathname) // return ino of pathname   
@@ -165,37 +193,61 @@ int getino(char *pathname) // return ino of pathname
   char buf[BLKSIZE];
   INODE *ip;
   MINODE *mip;
+  MTABLE *mp; 
 
   printf("getino: pathname=%s\n", pathname);
   if (strcmp(pathname, "/")==0)
-      return 2;
+      return 2;   //return root ino = 2
   
   // starting mip = root OR CWD
   if (pathname[0]=='/')
-     mip = root;
+     mip = root;  //if absolute pathname: start from root
   else
-     mip = running->cwd;
+     mip = running->cwd;   //if relative pathname: start from CWD
 
   mip->refCount++;         // because we iput(mip) later
   
   tokenize(pathname);
 
-  for (i=0; i<n; i++){
+  for (i=0; i < n; i++){   //search for each component string 
       printf("===========================================\n");
       printf("getino: i=%d name[%d]=%s\n", i, i, name[i]);
- 
+
+      if (!S_ISDIR(mip->INODE.i_mode)){   //check DIR type
+         printf("%s is not a directory\n", name[i]);
+         iput(mip);
+         return 0; 
+      }
+
       ino = search(mip, name[i]);
 
-      if (ino==0){
+      if (!ino){
          iput(mip);
          printf("name %s does not exist\n", name[i]);
          return 0;
       }
 
-      iput(mip);
-      mip = iget(dev, ino);
-   }
+      iput(mip);  //realease current minode 
+      mip = iget(dev, ino);   //switch to new minode 
 
+      if (ino==2 && dev != rootdev){   //if not the initial device 
+         if (i > 0){
+            printf("crossing down to mount point\n"); 
+            mp = getmtable(dev);
+            mip = mp->mntDirPtr;
+            dev = mip->dev;  
+         }
+         i++; 
+      }
+      else if (mip->mounted){
+         mp = mip->mptr;
+         if (dev != mp->dev){
+            dev = mp->dev; //update global device 
+            mip = iget(dev, 2);  //get root of new mount 
+            ino = 2; 
+         }
+      }
+   }
    iput(mip);
    return ino;
 }
