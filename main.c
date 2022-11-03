@@ -29,8 +29,11 @@ int  fd, dev, rootdev;
 int  nblocks, ninodes, bmap, imap, iblk;
 char line[128], cmd[32], pathname[128];
 
-#include "cd_ls_pwd.c"
-#include "mkdir_creat.c"
+#include "alloc_dealloc.c"
+
+#include "Level1/cd_ls_pwd.c"
+#include "Level1/mkdir_creat.c"
+#include "Level1/rmdir.c"
 
 int init()
 {
@@ -113,7 +116,7 @@ int main(int argc, char *argv[ ])
   // WRTIE code here to create P1 as a USER process
   
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -134,6 +137,8 @@ int main(int argc, char *argv[ ])
       make_dir(pathname);
     else if(strcmp(cmd, "creat")==0)
       creat_file(pathname); 
+    else if (strcmp(cmd, "rmdir")==0)
+      remove_dir(pathname); 
     else if (strcmp(cmd, "quit")==0)
        quit();
   }
@@ -150,89 +155,4 @@ int quit()
   }
   printf("see you later, alligator\n");
   exit(0);
-}
-
-int tst_bit(char *buf, int bit) //11.3.1, p.333
-{
-  return buf[bit/8] & (1 << (bit % 8));
-}
-
-int set_bit(char *buf, int bit)
-{
-  return buf[bit/8] |= (1 << (bit % 8));
-}
-
-int decFreeInodes(int dev)
-{
-  char buf[BLKSIZE];
-
-  //dec free inodes count in SUPER and GD
-  get_block(dev, 1, buf);
-  sp = (SUPER *)buf;
-  sp->s_free_inodes_count--;
-  put_block(dev, 1, buf);
-  get_block(dev, 2, buf); 
-  gp = (GD *)buf;
-  gp->bg_free_inodes_count--;
-  put_block(dev, 2, buf); 
-}
-
-int ialloc(int dev) //allocate an inode number from inode_bitmap 
-{
-  int i;
-  char buf[BLKSIZE];
-
-  //read inode_bitmap block 
-  get_block(dev, imap, buf);
-
-  for (i=0; i < ninodes; i++){  //use ninodes from SUPER block 
-    if (tst_bit(buf, i) == 0){
-      set_bit(buf, i);
-      put_block(dev, imap, buf);
-      //update free inode count in SUPER and GD
-      decFreeInodes(dev);
-
-      // printf("allocated ino = %d\n", i+1);  //bits count from 0; ino from 1
-      return (i+1); 
-    }
-  }
-  return 0; 
-}
-
-int decFreeBlocks(int dev)
-{
-  char buf[BLKSIZE];
-
-  //dec free blocks count in SUPER and GD
-  get_block(dev, 1, buf);
-  sp = (SUPER *)buf;
-  sp->s_free_blocks_count--;
-  put_block(dev, 1, buf);
-  get_block(dev, 2, buf); 
-  gp = (GD *)buf;
-  gp->bg_free_blocks_count--;
-  put_block(dev, 2, buf); 
-}
-
-int balloc (int dev)
-{
-  //balloc(dev)-allocates a FREE disk block number from a device  
-  int i; 
-  char buf[BLKSIZE];
-
-  //read block_bitmap block 
-  get_block(dev, bmap, buf);
-
-  for (i=0; i < nblocks ; i++){  //use nblocks from SUPER block 
-    if (tst_bit(buf, i) == 0){
-      set_bit(buf, i);
-      put_block(dev, bmap, buf);
-      //update free inode count in SUPER and GD
-      decFreeBlocks(dev);
-
-      // printf("disk block = %d\n", i+1);  //bits count from 0; ino from 1
-      return (i+1); 
-    }
-  }
-  return 0; 
 }

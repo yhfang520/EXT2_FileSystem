@@ -1,6 +1,4 @@
-
-
-
+/************* cd_ls_pwd.c file **************/
 extern MINODE *iget();
 
 MINODE minode[NMINODE];
@@ -14,10 +12,8 @@ int   n;         // number of component strings
 int  fd, dev;
 int  nblocks, ninodes, bmap, imap, iblk;
 char line[128], cmd[32], pathname[128];
+/**** globals defined in main.c file ****/
 
-
-
-/************* cd_ls_pwd.c file **************/
 int cd(char *pathname)
 {
   int ino;
