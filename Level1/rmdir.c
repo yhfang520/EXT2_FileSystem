@@ -12,11 +12,11 @@ int rm_child(MINODE *pip, char *name)
   int i, j, block_i, last_len, size, rm_len; 
   DIR *dp;
 
-  for (i=0; i < pip->INODE.i_blocks; i++){
+  for (i=0; i < pip->INODE.i_blocks; i++){ //search DIR direct blocks only 
     if (pip->INODE.i_block[i] == 0)
-      break;
-    //step to the last entry in the data block; 
+      return 0;
     get_block(pip->dev, pip->INODE.i_block[i], buf);
+    // printf("rm child test i=%d name=%s\n", i, name);
     dp = (DIR *)buf; 
     cp = buf;
     block_i=i;
@@ -30,6 +30,7 @@ int rm_child(MINODE *pip, char *name)
         i = j; 
         rm_cp = cp; 
         rm_len = dp->rec_len;
+        // printf("rm child test rm=[%d %s]\n", dp->rec_len, temp); 
       }
       last_len = dp->rec_len; 
       cp += dp->rec_len;  //advance cp by rec_len  
@@ -39,7 +40,6 @@ int rm_child(MINODE *pip, char *name)
     strncpy(temp, dp->name, dp->name_len);  //make name a string 
     temp[dp->name_len] = 0; //in temp[]
     if (j == 0){ //first and only entry in a data block 
-      printf("deallocate data block# %d\n", block_i);
       bdalloc(pip->dev, pip->INODE.i_block[block_i]); //deallocate its data blocks and inode 
       for (i=block_i; i < pip->INODE.i_blocks; i++) {//move other blocks up 
         printf("move other blocks up\n"); 
@@ -51,7 +51,7 @@ int rm_child(MINODE *pip, char *name)
       dp->rec_len += last_len;
     } else {  //entry is first but not the only entry or in the middle of a block
       size = buf+BLKSIZE - (rm_cp + rm_len);
-      memmove(rm_cp, rm_cp + rm_len, size); 
+      memmove(rm_cp, rm_cp + rm_len, size); // instead of memcpy I used memmove 
       cp -= rm_len;
       dp = (DIR *)cp; 
       dp->rec_len += rm_len;
@@ -65,17 +65,19 @@ int rm_child(MINODE *pip, char *name)
 
 int remove_dir(char *pathname)
 { 
+  MINODE *mip, *pmip; 
   DIR *dp;
   char buf[BLKSIZE], name[256], *cp;
   //get in-memory INODE of pathname 
   int ino = getino(pathname);
   int i; 
   if (ino == -1){
-      printf("Access denied\n");
+      printf("ino does not exist\n");
       return -1; 
   }
-  MINODE *mip = iget(dev, ino); 
-  findmyname(mip, ino, name); 
+  mip = iget(dev, ino); 
+  printf("check dir is empty by step through its data block\n");
+  findmyname(mip, ino, name); //find name from parent DIR 
 
   if (running->uid != mip->INODE.i_uid || running->uid !=0){  //check running PROC is user 
     return 0; 
@@ -85,40 +87,47 @@ int remove_dir(char *pathname)
     printf("its not a dir\n");
     return -1; 
   }
-
-  printf("check dir is empty by step through its data block\n");
-  if (mip->refCount <= 1){
+  
+  if (mip->refCount > 2){//check if its unused 
+    printf("node used, refCount=%d\n", mip->refCount);
+    return -1; 
+  }
+  
   //verify DIR is empty (traverse data blocks for number of entries = 2);
-    if (mip->INODE.i_links_count <= 2){   
-      int actual_link = 0;
+  if (mip->INODE.i_links_count <= 2){ //check reg files 
+    int actual_link = 0;
+    get_block(dev, mip->INODE.i_block[0], buf);
+    dp = (DIR *)buf; 
+    cp = buf; 
+    printf("OK\n"); 
 
-      get_block(dev, mip->INODE.i_block[0], buf);
-      dp = (DIR *)buf; 
-      cp = buf; 
+    while(cp < buf + BLKSIZE){
+      actual_link++;
+      cp += dp->rec_len; 
+      dp = (DIR *)cp; 
+    }
 
-      while(cp < buf + BLKSIZE){
-        actual_link++;
-        cp += dp->rec_len; 
-        dp = (DIR *)cp; 
-      }
-
-      if (actual_link <= 2){
-        for (i=0; i < 12; i++){
-          if (mip->INODE.i_block[i]==0)
-            continue;
-          else 
-            bdalloc(mip->dev, mip->INODE.i_block[i]); //dealloc mip blocks 
-          }
+    if (actual_link <= 2){  
+      for (i=0; i < 12; i++){
+        if (mip->INODE.i_block[i]==0)
+          continue;
+        else 
+          bdalloc(mip->dev, mip->INODE.i_block[i]); //dealloc mip blocks 
+        }
+        printf("deallocate data blcok# %d\n", mip->INODE.i_block[0]);
         idalloc(mip->dev, mip->ino);  //dealloc mip inode 
+        printf("deallocate inode# %d\n", mip->ino); 
         iput(mip); 
         //get parent's ino and inode 
-        int pino = findino(); //get pino from .. entry in INODE.i_block[0]
-        MINODE *pmip = iget(mip->dev, pino); 
-          
+        u32 *inum = malloc(8); 
+        int pino = findino(mip, inum); //get pino from .. entry in INODE.i_block[0]
+        pmip = iget(mip->dev, pino); 
         //get name from parent DIR's data block 
         findmyname(pmip, ino, name);  //find name from parent DIR 
+        // printf("remove_dir test: pino %d, ino %d, name %s\n", pino, ino, name); 
 
         if (strcmp(name, ".") !=0 && strcmp(name, "..") != 0 && strcmp(name, "/") != 0){
+          // printf("remove dir test call rm_child\n"); 
           //remove name from parent directory 
           rm_child(pmip, name);
           pmip->INODE.i_links_count--;  //dec link count 
@@ -130,14 +139,12 @@ int remove_dir(char *pathname)
           //dec parent links_count by 1; mark parent pimp dirty;
           iput(pmip);
         }
-      } else {
-        printf("DIR is not empty\n");
-      }
-    }else{
-      printf("DIR is not empty\n"); 
+        printf("%s has removed\n", name); 
+    } else {
+      printf("DIR is not empty\n");
     }
-  } else if (mip->refCount > 1){
-    iput(mip);
+  }else{
+    printf("DIR is not empty\n"); 
   }
   return 0;
 }

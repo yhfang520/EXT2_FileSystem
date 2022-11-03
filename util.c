@@ -266,16 +266,16 @@ int findmyname(MINODE *parent, u32 myino, char myname[ ])
    get_block(dev, parent->INODE.i_block[0], sbuf); // get the block
    dp = (DIR *)sbuf; // cast the block to a DIR
    cp = sbuf; // set cp to the beginning of the block
-   printf("  ino   rlen  nlen  name\n");
+   printf("  i_number  rec_len  name_len  name\n");
 
    while (cp < sbuf + BLKSIZE){ 
       strncpy(temp, dp->name, dp->name_len); // dp->name is NOT a string
       temp[dp->name_len] = 0;                // temp is a STRING
-      printf("%4d  %4d  %4d    %s\n", 
+      printf("  %4d     %4d     %4d        %s\n", 
          dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
-
+ 
       if (dp->inode == myino){            // compare name with temp !!!
-         printf("found %s ino = %d\n", temp, dp->inode);
+         //printf("found %s ino = %d\n", temp, dp->inode);
          strcpy(myname, temp);
          return 1;
       }
@@ -300,21 +300,21 @@ int findino(MINODE *mip, u32 *myino) // myino = i# of . return i# of ..
    get_block(dev, mip->INODE.i_block[0], sbuf); // get the block
    dp = (DIR *)sbuf; // cast the block to a DIR
    cp = sbuf; // set cp to the beginning of the block
-   printf("  ino   rlen  nlen  name\n");
+   //printf("  i_number  rec_len  name_len  name\n");
 
    while (cp < sbuf + BLKSIZE){ 
       strncpy(temp, dp->name, dp->name_len); // dp->name is NOT a string
       temp[dp->name_len] = 0;                // temp is a STRING
-      printf("%4d  %4d  %4d    %s\n", 
-         dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
+      //printf("%4d  %4d  %4d    %s\n", 
+        // dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
 
       if (strcmp(temp, ".") == 0){  // if the name is . set myino to the inode
-         printf("found %s ino = %d\n", temp, dp->inode);
+         //printf("found %s ino = %d\n", temp, dp->inode);
          *myino = dp->inode; // set myino to the inode 
       }
       else if (strcmp(temp, "..") == 0) // if the name is .. return to the inode
       {
-         printf("found %s ino = %d\n", temp, dp->inode);
+         //printf("found %s ino = %d\n", temp, dp->inode);
          return dp->inode; // return the inode
       }
 

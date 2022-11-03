@@ -133,6 +133,7 @@ int idalloc(int dev, int ino)
   //write buf back 
   put_block(dev, imap, buf);
   //update free inode count in SUPER and GD
+  //printf("deallocate inode# %d\n", ino-1); 
   incFreeInodes(dev); 
 }
 
@@ -162,6 +163,6 @@ int bdalloc(int dev, int bno)
   clr_bit(buf, bno-1);  //clear bits to 0
   put_block(dev, bmap, buf);  //write block back 
   incFreeBlocks(dev); 
-  printf("deallocate data block %d\n", bno-1);
+  //printf("deallocate data block# %d\n", bno-1);
   return 0;
 }
