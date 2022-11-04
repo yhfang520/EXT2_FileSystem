@@ -27,13 +27,14 @@ int   n;         // number of component strings
 
 int  fd, dev, rootdev;
 int  nblocks, ninodes, bmap, imap, iblk;
-char line[128], cmd[32], pathname[128];
+char line[128], cmd[32], pathname[128], parameter[128];
 
 #include "alloc_dealloc.c"
 
 #include "Level1/cd_ls_pwd.c"
 #include "Level1/mkdir_creat.c"
 #include "Level1/rmdir.c"
+#include "Level1/symlink.c"
 
 int init()
 {
@@ -123,9 +124,10 @@ int main(int argc, char *argv[ ])
     if (line[0]==0)
        continue;
     pathname[0] = 0;
+    parameter[0] = 0;
 
-    sscanf(line, "%s %s", cmd, pathname);
-    printf("cmd=%s pathname=%s\n", cmd, pathname);
+    sscanf(line, "%s %s %s", cmd, pathname, parameter);
+    printf("cmd=%s pathname=%s parameter=%s\n", cmd, pathname, parameter);
   
     if (strcmp(cmd, "ls")==0)
        ls();
@@ -138,7 +140,10 @@ int main(int argc, char *argv[ ])
     else if(strcmp(cmd, "creat")==0)
       creat_file(pathname); 
     else if (strcmp(cmd, "rmdir")==0)
-      remove_dir(pathname); 
+      remove_dir(pathname);
+    else if (strcmp(cmd, "symlink")==0)
+      //printf("%s %s\n", pathname, parameter); // for testing
+      symlink_file(pathname, parameter);
     else if (strcmp(cmd, "quit")==0)
        quit();
   }
