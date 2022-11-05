@@ -199,12 +199,15 @@ int getino(char *pathname) // return ino of pathname
       return 2;   //return root ino = 2
   
   // starting mip = root OR CWD
-  if (pathname[0]=='/')
-     mip = root;  //if absolute pathname: start from root
-  else
-     mip = running->cwd;   //if relative pathname: start from CWD
-
-  mip->refCount++;         // because we iput(mip) later
+  if (pathname[0]=='/'){
+      dev = root->dev;  //if absolute pathname: start from root
+      ino = root->ino; 
+   } else{
+     //mip = running->cwd;   //if relative pathname: start from CWD
+      dev = running->cwd->dev; 
+      ino = running->cwd->ino; 
+   }
+  mip = iget(dev, ino);         // because we iput(mip) later
   
   tokenize(pathname);
 
@@ -223,7 +226,7 @@ int getino(char *pathname) // return ino of pathname
       if (!ino){
          iput(mip);
          printf("name %s does not exist\n", name[i]);
-         return 0;
+         return -1;
       }
 
       iput(mip);  //realease current minode 
@@ -272,7 +275,7 @@ int findmyname(MINODE *parent, u32 myino, char myname[ ])
       strncpy(temp, dp->name, dp->name_len); // dp->name is NOT a string
       temp[dp->name_len] = 0;                // temp is a STRING
       printf("  %4d     %4d     %4d        %s\n", 
-         dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
+          dp->inode, dp->rec_len, dp->name_len, temp); // print temp !!!
  
       if (dp->inode == myino){            // compare name with temp !!!
          //printf("found %s ino = %d\n", temp, dp->inode);

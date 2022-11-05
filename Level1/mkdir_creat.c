@@ -205,7 +205,6 @@ int creat_file(char *pathname)
         printf("Dir %s already exsists under parent %s", child, parent);
     }
     return 0;
-
 }
 
 #endif 

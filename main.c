@@ -34,6 +34,7 @@ char line[128], cmd[32], pathname[128], parameter[128];
 #include "Level1/cd_ls_pwd.c"
 #include "Level1/mkdir_creat.c"
 #include "Level1/rmdir.c"
+#include "Level1/link_unlink.c"
 #include "Level1/symlink.c"
 
 int init()
@@ -117,7 +118,7 @@ int main(int argc, char *argv[ ])
   // WRTIE code here to create P1 as a USER process
   
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|symlink|unlink|readlink|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -141,9 +142,13 @@ int main(int argc, char *argv[ ])
       creat_file(pathname); 
     else if (strcmp(cmd, "rmdir")==0)
       remove_dir(pathname);
+    else if (strcmp(cmd, "link")==0)
+      my_link(pathname, parameter);
     else if (strcmp(cmd, "symlink")==0)
       //printf("%s %s\n", pathname, parameter); // for testing
       symlink_file(pathname, parameter);
+    else if (strcmp(cmd, "unlink")==0)
+      my_unlink(pathname);
     else if (strcmp(cmd, "quit")==0)
        quit();
   }
