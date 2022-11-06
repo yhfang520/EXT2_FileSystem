@@ -149,6 +149,8 @@ int main(int argc, char *argv[ ])
       symlink_file(pathname, parameter);
     else if (strcmp(cmd, "unlink")==0)
       my_unlink(pathname);
+    else if (strcmp(cmd, "readlink")==0)
+      my_readlink(pathname);
     else if (strcmp(cmd, "quit")==0)
        quit();
   }

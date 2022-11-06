@@ -7,70 +7,66 @@
 #include "mkdir_creat.c"
 
 
-extern MINODE *iget();
-
-extern MINODE minode[NMINODE];
-extern MINODE *root;
-extern PROC   proc[NPROC], *running;
-
-extern char gpath[128]; // global for tokenized components
-extern char *name[64];  // assume at most 64 components in pathname
-extern int   n;         // number of component strings
-
-extern int  fd, dev;
-extern int  nblocks, ninodes, bmap, imap, iblk;
-extern char line[128], cmd[32], pathname[128];
-
-
 int symlink_file(char *pathname, char *parameter)
 {
-    // Check if the file exists
-    int oino = getino(pathname);
-    if (oino == 0)
-    {
-        printf("File does not exist\n");
+    // check if pathname exists
+    int ino = getino(pathname);
+    if (ino == -1){
+        printf("symlink: %s does not exist\n", pathname);
         return -1;
     }
-    // Check if the parameter exists
+
+    // check if parameter exists
     int nino = getino(parameter);
-    if (nino != 0)
-    {
-        printf("New file exists\n");
+    if (nino != -1){
+        printf("symlink: %s already exists\n", parameter);
         return -1;
     }
-    // Create the new file
+    // creat a file named parameter
     creat_file(parameter);
 
-    // Get the new file's inode
-    nino = getino(parameter);
-    MINODE *mip = iget(dev, nino);
+    // set the parameter's INODE.i_mode to LNK
+    int pino = getino(parameter);
+    MINODE *mip = iget(dev, pino);
+    mip->INODE.i_mode = 0xA1FF;
 
-    // Set the new file's type to symbolic link
-    mip->INODE.i_mode = 0120000;
-
-    // assume length of pathname is <= 60 chars
-    if (strlen(pathname) > 60)
-    {
-        printf("Pathname too long\n");
+    // check the length of the pathname <= 60
+    if (strlen(pathname) >= 60){
+        printf("symlink: pathname is too long\n");
         return -1;
     }
 
-    // store pathname in parameter INODE.i_block[0]
+    // store the pathname name in the INODE.i_block[0]
     strcpy((char *)mip->INODE.i_block, pathname);
-
-    // Set the new file's size length of parameter
+    // set the INODE.i_size to the length of the pathname
     mip->INODE.i_size = strlen(pathname);
-
-    // Mark the new file as dirty
     mip->dirty = 1;
+    iput(mip);
 
-    iput(mip);// write INODE back to disk
     return 1;
 }
 
 int my_readlink(char *pathname)
 {
-    return 1;
+    // get file inode in memory 
+    int ino = getino(pathname);
+    MINODE *mip = iget(dev, ino);
+    
+    //check if it is a symbolic link
+    if (!S_ISLNK(mip->INODE.i_mode)){
+        printf("readlink: %s is not a symbolic link\n", pathname);
+        return -1;
+    }
+
+    // copy the pathname from the INODE.i_block[0] to buf[ ]
+    char buf[BLKSIZE];
+    strcpy(buf, (char *)mip->INODE.i_block);
+    printf("readlink: %s\n", buf);
+    iput(mip);
+
+    // return the length of the pathname
+    return strlen(buf);
+
 }
 
 #endif
