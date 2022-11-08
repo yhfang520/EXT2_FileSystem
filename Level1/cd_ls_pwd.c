@@ -49,7 +49,7 @@ int ls_file(MINODE *mip, char *name)
   char *t2 = "----------------";
 
   int i;
-  char *ftime;
+  char ftime[64], buf[BLKSIZE];
   INODE *inode = &mip->INODE;
 
   printf("%-3d ", inode->i_links_count);
@@ -67,17 +67,21 @@ int ls_file(MINODE *mip, char *name)
       printf("%c", t2[i]);
   }
 
-  printf("%4d ", inode->i_uid);
-  printf("%4d ", inode->i_gid);
-  printf("%8d ", inode->i_size);
-  printf("%4d ", inode->i_links_count);
+  printf("%4d ", inode->i_uid); //owner 
+  printf("%4d ", inode->i_gid); //gid 
+  printf("%8d ", inode->i_size);  //file size 
+  printf("%4d ", inode->i_links_count); //link count 
+
+  //print time 
   time_t t = inode->i_ctime; // time in seconds
   ftime = ctime(&t); // convert to calendar time
   ftime[strlen(ftime)-1] = 0; // kill \n at end
   printf("%s ", ftime);
+
+  //print name 
   printf("%s", basename(name)); // print file basename
-  if(S_ISLNK(inode->i_mode)){
-    char buf[BLKSIZE];
+  //print ->linkname if symboloc file 
+  if((inode->i_mode & 0xF000) == 0xA000){
     readlink(mip, buf); 
     printf(" -> %s", buf);
   }

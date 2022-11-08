@@ -15,6 +15,8 @@ int rm_child(MINODE *pip, char *name)
   for (i=0; i < pip->INODE.i_blocks; i++){ //search DIR direct blocks only 
     if (pip->INODE.i_block[i] == 0)
       return 0;
+
+    //last entry in the data block 
     get_block(pip->dev, pip->INODE.i_block[i], buf);
     // printf("rm child test i=%d name=%s\n", i, name);
     dp = (DIR *)buf; 
@@ -35,7 +37,8 @@ int rm_child(MINODE *pip, char *name)
       cp += dp->rec_len;  //advance cp by rec_len  
       dp = (DIR *)cp;
       j++;  //get count of entries inro j 
-    }
+    } //dp NOW points at last entry in block 
+
     printf("previous = [%d %s]", last_len, temp);
     strncpy(temp, dp->name, dp->name_len);  //make name a string 
     temp[dp->name_len] = 0; //in temp[]
@@ -52,8 +55,8 @@ int rm_child(MINODE *pip, char *name)
       dp = (DIR *)cp; 
       dp->rec_len += last_len;
     } else {  //entry is first but not the only entry or in the middle of a block
-      size = buf+BLKSIZE - (rm_cp + rm_len);
-      memmove(rm_cp, rm_cp + rm_len, size); // instead of memcpy I used memmove 
+      size = buf+BLKSIZE - (rm_cp + rm_len);  //in middle, copying size bytes
+      memmove(rm_cp, rm_cp + rm_len, size); //move all trailing entries LEFT to overlay the delted entry; 
       cp -= rm_len;
       dp = (DIR *)cp; 
       dp->rec_len += rm_len;

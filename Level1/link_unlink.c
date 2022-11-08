@@ -47,7 +47,7 @@ int my_link(char *pathname, char *new_file)
     omip->dirty = 1;    //for write back by iput(omip)
     iput(omip);
     iput(pmip);
-    printf("------- verify unlink results -------\n");
+    printf("------- verify link results -------\n");
     findmyname(pmip, oino, pathname);
     return 1;
 }

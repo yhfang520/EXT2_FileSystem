@@ -18,8 +18,9 @@ int enter_name(MINODE *pip, int ino, char *name)
     printf("need_len for %s = %d\n", name, need_length); 
     ip = &pip->INODE;   //get the inode 
 
+    //for each data block of parent DIR do  //assume: only 12 direct blocks 
     for (int i=0; i < 12; i++){ //find empty block 
-        if (ip->i_block[i] == 0)
+        if (ip->i_block[i] == 0)    //if no space in existing data block 
             break; 
         get_block(pip->dev, ip->i_block[i], buf);    //get empty block 
         block_i = i; 
@@ -38,11 +39,11 @@ int enter_name(MINODE *pip, int ino, char *name)
         printf("trim [%d %s] rec_len to ideal_len %d\n", dp->rec_len, dp->name, ideal_length);
 
         int remain = dp->rec_len - ideal_length;    //last entry's rec_len - its ideal_length 
-       
+        
         if (remain >= need_length){
             //enter the new entry as the LAST entry and 
             //trim the previous entry rec_len to its ideal_length; 
-            dp->rec_len = ideal_length;
+            dp->rec_len = ideal_length; //trim last rec_len to ideal_len 
             cp += dp->rec_len;
             dp = (DIR *)cp; 
             dp->inode = ino; 
@@ -63,9 +64,10 @@ int my_mkdir(MINODE *pip, char *name)
     int ino = ialloc(dev), blk = balloc(dev), i;    //allocate an INODE and a disk block; 
     printf("ialloc: ino=%d balloc: bno=%d \n", ino, blk);
 
+    //creates an INODE=(dev, ino) in a minode, and weites the INODE to disk 
     MINODE *mip = iget(dev, ino);   //load INODE into a minode 
     INODE *ip = &mip->INODE;    //initialize mip->INODE as a DIR INODE 
-    ip->i_mode = 0x41ED;    //040775: DIR type and permissions 
+    ip->i_mode = 0x41ED;    //040775: DIR type and permissions. set to dir type and set perms
     ip->i_uid = running->uid;   //owner uid 
     ip->i_gid = running->gid;   //group id
     ip->i_size = BLKSIZE;   //size in bytes 
@@ -78,16 +80,19 @@ int my_mkdir(MINODE *pip, char *name)
         ip->i_block[i] = 0;
     mip->dirty = 1; //mark minode dirty 
     iput(mip);  //write INODE to disk  
+
+    //create data block for new DIR containing . and .. entries 
     bzero(buf, BLKSIZE);    //clear buf[] to 0;
     cp = buf;
     dp = (DIR *)cp; //write . to buf 
+    //makr . entry 
     dp->inode = ino;
     dp->rec_len = 12;
     dp->name_len = 1;
     dp->name[0] = '.';
     //make .. entry: pino=parent DIR ino, blk=allocated block
     cp += dp->rec_len; 
-    dp = (DIR *)cp; //mov epointer to end of last entry into buf 
+    dp = (DIR *)cp; //move pointer to end of last entry into buf 
     dp->inode = pip->ino;
     dp->rec_len = BLKSIZE-12;   //rec_Len spans block 
     dp->name_len = 2;
@@ -118,8 +123,8 @@ int make_dir(char * pathname)
     char *child = basename(path2);
 
     //dirname must exist and is a DIR
-    MINODE *pino = getino(parent);
-    MINODE *pmip = iget(dev, pino); 
+    MINODE *pino = getino(parent);  //get parent inode number 
+    MINODE *pmip = iget(dev, pino); //get inode of parent 
 
     if (!S_ISDIR(pmip->INODE.i_mode)){  //check pmip->INODE is a dir 
         printf("%s is not directory\n", parent);
@@ -127,7 +132,8 @@ int make_dir(char * pathname)
     }
     printf("check child NOT exist in parent directory\n"); 
 
-    if (search(pmip, child)==0){
+    //basename must not exist in parent DIR 
+    if (search(pmip, child)==0){    //if can't find child name in start MINODE 
         int r = my_mkdir(pmip, child);    //create a DIR 
         pmip->INODE.i_links_count++;    //increment link count    
         pmip->INODE.i_atime = time(0L); //touch atime 
