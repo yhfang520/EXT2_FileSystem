@@ -29,6 +29,10 @@ int symlink_file(char *pathname, char *parameter)
     int pino = getino(parameter);
     MINODE *mip = iget(dev, pino);
     mip->INODE.i_mode = 0xA1FF;
+    // set INODE.i_links_count to 1
+    mip->INODE.i_links_count = 1;
+    // set INODE.i_block to 0
+    mip->INODE.i_blocks = 0;
 
     // check the length of the pathname <= 60
     if (strlen(pathname) >= 60){
