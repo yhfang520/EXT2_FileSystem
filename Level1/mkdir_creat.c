@@ -135,7 +135,7 @@ int make_dir(char * pathname)
     //basename must not exist in parent DIR 
     if (search(pmip, child)==0){    //if can't find child name in start MINODE 
         int r = my_mkdir(pmip, child);    //create a DIR 
-        pmip->INODE.i_links_count + 1;   //increment link count    THIS WAS ++ we just wanted to increament 
+        pmip->INODE.i_links_count + 1;   //increment link count    THIS WAS ++ we just wanted to increament by 1 
         pmip->INODE.i_atime = time(0L); //touch atime 
         pmip->dirty = 1;    //make dirty 
         iput(pmip);    //write to disk 
