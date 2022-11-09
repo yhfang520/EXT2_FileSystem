@@ -58,11 +58,12 @@ int my_readlink(char *pathname)
         return -1;
     }
 
-    // copy the pathname from the INODE.i_block[0] to buf[ ]
+    // copy the pathname from the INODE.i_block[0] to buf[ ] using strncpy()
     char buf[BLKSIZE];
-    strcpy(buf, (char *)mip->INODE.i_block);
-    printf("readlink: %s\n", buf);
-    iput(mip);
+    strncpy(buf, (char *)mip->INODE.i_block, BLKSIZE);
+    // print the pathname
+    printf("%s\n", buf);
+    
 
     // return the length of the pathname
     return strlen(buf);

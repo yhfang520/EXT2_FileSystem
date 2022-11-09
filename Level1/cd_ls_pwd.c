@@ -74,17 +74,18 @@ int ls_file(MINODE *mip, char *name)
 
   //print time 
   time_t t = inode->i_ctime; // time in seconds
-  ftime = ctime(&t); // convert to calendar time
+  strcpy(ftime, ctime(&t)); // convert to calendar time
   ftime[strlen(ftime)-1] = 0; // kill \n at end
   printf("%s ", ftime);
 
   //print name 
   printf("%s", basename(name)); // print file basename
   //print ->linkname if symboloc file 
-  if((inode->i_mode & 0xF000) == 0xA000){
-    readlink(mip, buf); 
-    printf(" -> %s", buf);
+  if(S_ISLNK(inode->i_mode)){
+    printf(" -> %s", (char *)inode->i_block);
   }
+
+
   printf(" [%d %2d] ", mip->dev, mip->ino); // print [dev, ino]
 }
 
