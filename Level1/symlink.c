@@ -37,7 +37,7 @@ int symlink_file(char *pathname, char *parameter)
     }
 
     // store the pathname name in the INODE.i_block[0]
-    strcpy((char *)mip->INODE.i_block, pathname);
+    strncpy((char *)mip->INODE.i_block, pathname, strlen(pathname));
     // set the INODE.i_size to the length of the pathname
     mip->INODE.i_size = strlen(pathname);
     mip->dirty = 1;
@@ -63,7 +63,7 @@ int my_readlink(char *pathname)
     strncpy(buf, (char *)mip->INODE.i_block, BLKSIZE);
     // print the pathname
     printf("%s\n", buf);
-    
+
 
     // return the length of the pathname
     return strlen(buf);
