@@ -35,19 +35,19 @@ int symlink_file(char *pathname, char *parameter)
     mip->INODE.i_blocks = 0;
 
     // check the length of the pathname <= 60
-    if (strlen(pathname) >= 60){
+    if (strlen(pathname) <= 60){
+        // copy the pathname into the INODE.i_block[0] using strncpy()
+        strncpy((char *)mip->INODE.i_block, pathname, strlen(pathname));
+        // mark the mip dirty
+        mip->dirty = 1;
+        // iput the mip
+        iput(mip);
+    }
+    else{
         printf("symlink: pathname is too long\n");
         return -1;
     }
-
-    // store the pathname name in the INODE.i_block[0]
-    strncpy((char *)mip->INODE.i_block, pathname, strlen(pathname));
-    // set the INODE.i_size to the length of the pathname
-    mip->INODE.i_size = strlen(pathname);
-    mip->dirty = 1;
-    iput(mip);
-
-    return 1;
+    
 }
 
 int my_readlink(char *pathname)
