@@ -7,26 +7,26 @@
 #include "mkdir_creat.c"
 
 
-int symlink_file(char *pathname, char *parameter)
+int symlink_file(char *old_file, char *new_file)
 {
     // check if pathname exists
-    int ino = getino(pathname);
+    int ino = getino(old_file);
     if (ino == -1){
-        printf("symlink: %s does not exist\n", pathname);
+        printf("symlink: %s does not exist\n", old_file);
         return -1;
     }
 
     // check if parameter exists
-    int nino = getino(parameter);
+    int nino = getino(new_file);
     if (nino != -1){
-        printf("symlink: %s already exists\n", parameter);
+        printf("symlink: %s already exists\n", new_file);
         return -1;
     }
     // creat a file named parameter
-    creat_file(parameter);
+    creat_file(new_file);
 
     // set the parameter's INODE.i_mode to LNK
-    int pino = getino(parameter);
+    int pino = getino(new_file);
     MINODE *mip = iget(dev, pino);
     mip->INODE.i_mode = 0xA1FF;
     // set INODE.i_links_count to 1
@@ -35,9 +35,9 @@ int symlink_file(char *pathname, char *parameter)
     mip->INODE.i_blocks = 0;
 
     // check the length of the pathname <= 60
-    if (strlen(pathname) <= 60){
+    if (strlen(old_file) <= 60){
         // copy the pathname into the INODE.i_block[0] using strncpy()
-        strncpy((char *)mip->INODE.i_block, pathname, strlen(pathname));
+        strncpy((char *)mip->INODE.i_block, old_file, strlen(old_file));
         // mark the mip dirty
         mip->dirty = 1;
         // iput the mip
