@@ -93,11 +93,31 @@ int remove_dir(char *pathname)
     printf("its not a dir\n");
     return -1; 
   }
+
+  get_block(dev, mip->INODE.i_block[0], buf);
+  dp = (DIR*)buf;
+  cp = buf;
   
-  if (mip->refCount > 2){//check if its unused 
-    printf("node used, refCount=%d\n", mip->refCount);
-    return -1; 
+  int item = 0;
+  while (cp < buf + BLKSIZE)
+  {
+    item +=1;
+    cp += dp->rec_len;
+    dp = (DIR*) cp;
+
   }
+  
+  if (item != 2)
+  {
+    printf("cannot rmdir: %s is not empty\n",pathname);
+    printf("%d\n", item);
+    return -1;
+  }
+
+  // if (mip->refCount > 2){//check if its unused 
+  //   printf("node used, refCount=%d\n", mip->refCount);
+  //   return -1; 
+  // }
 
   //verify DIR is empty (traverse data blocks for number of entries = 2);
   if (mip->INODE.i_links_count <= 2){ //check reg files 

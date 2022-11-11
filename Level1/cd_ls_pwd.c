@@ -52,7 +52,6 @@ int ls_file(MINODE *mip, char *name)
   char ftime[64], buf[BLKSIZE];
   INODE *inode = &mip->INODE;
 
-  printf("%-3d ", inode->i_links_count);
   if (S_ISDIR(inode->i_mode))
     printf("d");
   else if (S_ISREG(inode->i_mode))

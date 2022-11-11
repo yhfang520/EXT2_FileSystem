@@ -40,10 +40,10 @@ int my_link(char *pathname, char *new_file)
     strcpy(child, basename(new_file));
     int pino = getino(parent);
     MINODE *pmip = iget(dev, pino);
-
+   
     //creat entry in new parent DIR with same inode number of old_file
     enter_name(pmip, oino, child);
-    omip->INODE.i_links_count++;    //inc INODE's links_count by 1
+    omip->INODE.i_links_count + 1;    //inc INODE's links_count by 1 //this is where the fix is 
     omip->dirty = 1;    //for write back by iput(omip)
     iput(omip);
     iput(pmip);
@@ -82,7 +82,7 @@ int my_unlink(char *pathname)
         mip->dirty = 1; //for write INODE back to disk 
     } else {
         //deallocate all data blocks in INODE; 
-        for (int i=0; i < 12 && mip->INODE.i_block[i] !=0; i++){
+        for (int i=0; i < 12 && mip->INODE.i_block[i] !=0; i++){ 
             bdalloc(dev, mip->INODE.i_block[i]);
         }
         idalloc(dev, ino); 
