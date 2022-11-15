@@ -82,16 +82,17 @@ int open_file(char *pathname, int mode)
   oftp->refCount = 1;
   oftp->mptr = mip;  //point at the file's minode[]
 
-  printf("open test mode = %d\n", mode);
-
+  printf("%s opend in ", pathname);
   //Depending on the open mode 0|1|2|3, set the OFT's offset accordingly
   switch (mode){  //offset
     case 0: //Read: offset=0
       oftp->offset = 0;
+      printf("read");
       break; 
     case 1: //Write: truncate file to 0 sizes 
       truncate(mip);
       oftp->offset = 0;
+      printf("write");
       break; 
     case 2: //Read/Write: do NOT truncate file, offset = 0
       oftp->offset = 0;
@@ -102,6 +103,8 @@ int open_file(char *pathname, int mode)
       printf("invalid mode\n");
       return -1; 
   }
+
+  printf(" mode = %d: fd = %d\n", mode, running->fd[i]);
 
   //find the SMALLEST i in running PROC's fd[ ] such that fd[i] is NULL
   for (i=0; i < NFD; i++){  //find empty fd in running PROC's fd array 
@@ -140,6 +143,8 @@ int close_file(int fd)
   if (oftp->refCount > 0)
     return 0;
   MINODE *mip = oftp->mptr;
+  printf("close: refCount = %d", oftp->refCount--); 
+  printf("fd = %d is closed", running->fd[fd]); 
   iput(mip);  //release minode 
   return 0;
 }
