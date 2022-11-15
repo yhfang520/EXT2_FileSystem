@@ -12,12 +12,12 @@ int read_file(int fd, int nbytes)
 
 int my_read(int fd, char buf[], int nbytes)
 {
-    return 1; // Eventually: Return the actual number of bytes read
+  return 1; // Eventually: Return the actual number of bytes read
 }
 
 int cat_file(char *pathname)
 {
-    return 1;
+  return 1;
 }
 
 #endif

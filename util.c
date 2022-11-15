@@ -14,7 +14,8 @@
 extern MINODE minode[NMINODE];
 extern MINODE *root;
 extern PROC   proc[NPROC], *running;
-MTABLE  mtable[NMTABLE];
+extern MTABLE  mtable[NMTABLE];
+extern OFT     oft[NOFT];
 
 extern char gpath[128];
 extern char *name[64];
@@ -22,7 +23,7 @@ extern int n;
 
 extern int fd, dev, rootdev;
 extern int nblocks, ninodes, bmap, imap, iblk;
-extern char line[128], cmd[32], pathname[128];
+extern char line[128], cmd[32], pathname[128], parameter[128];
 
 int get_block(int dev, int blk, char *buf)
 {

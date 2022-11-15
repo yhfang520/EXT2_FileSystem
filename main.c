@@ -16,17 +16,18 @@
 
 extern MINODE *iget();
 
-MINODE minode[NMINODE];
-MINODE *root;
-PROC   proc[NPROC], *running;
+MINODE  minode[NMINODE];
+MINODE  *root;
+PROC    proc[NPROC], *running;
 MTABLE  mtable[NMTABLE];
+OFT     oft[NOFT];
 
 char gpath[128]; // global for tokenized components
 char *name[64];  // assume at most 64 components in pathname
 int   n;         // number of component strings
 
 int  fd, dev, rootdev;
-int  nblocks, ninodes, bmap, imap, iblk;
+int  nblocks, ninodes, bmap, imap, iblk, mode;
 char line[128], cmd[32], pathname[128], parameter[128];
 
 #include "alloc_dealloc.c"
@@ -36,6 +37,7 @@ char line[128], cmd[32], pathname[128], parameter[128];
 #include "Level1/rmdir.c"
 #include "Level1/link_unlink.c"
 #include "Level1/symlink.c"
+#include "Level2/open_close.c"
 
 int init()
 {
@@ -118,7 +120,7 @@ int main(int argc, char *argv[ ])
   // WRTIE code here to create P1 as a USER process
   
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|symlink|unlink|readlink|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|symlink|unlink|readlink|open|close|lseek|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
@@ -129,7 +131,9 @@ int main(int argc, char *argv[ ])
 
     sscanf(line, "%s %s %s", cmd, pathname, parameter);
     printf("cmd=%s pathname=%s parameter=%s\n", cmd, pathname, parameter);
-  
+
+    sscanf(line, "%s %s %d", cmd, pathname, &mode);
+
     if (strcmp(cmd, "ls")==0)
        ls();
     else if (strcmp(cmd, "cd")==0)
@@ -151,6 +155,10 @@ int main(int argc, char *argv[ ])
       my_unlink(pathname);
     else if (strcmp(cmd, "readlink")==0)
       my_readlink(pathname);
+    else if (strcmp(cmd, "open")==0)
+      open_file(pathname, mode);
+    else if (strcmp(cmd, "close")==0)
+      close_file(pathname);
     else if (strcmp(cmd, "quit")==0)
        quit();
   }

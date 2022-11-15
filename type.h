@@ -21,6 +21,8 @@ DIR   *dp;
 #define NMINODE   128
 #define NPROC       2
 #define NMTABLE    10
+#define NFD        16
+#define NOFT       40
 
 //In-memory inodes structure 
 typedef struct minode{
@@ -33,6 +35,14 @@ typedef struct minode{
   struct mntable *mptr;  // for level-3
 }MINODE;
 
+//OpenFileTable
+typedef struct oft{
+  int     mode; //R|W|RW|APP
+  int     refCount;
+  MINODE  *mptr;
+  int     offset;
+}OFT;
+
 //PROC structure 
 typedef struct proc{
   struct proc *next;
@@ -40,6 +50,7 @@ typedef struct proc{
   int          uid;      // user ID
   int          gid;
   MINODE      *cwd;      // CWD directory pointer  
+  OFT         *fd[NFD];  //opened oft's of this process
 }PROC;
 
 //Mount Table structure 
