@@ -43,7 +43,7 @@ int my_link(char *pathname, char *new_file)
    
     //creat entry in new parent DIR with same inode number of old_file
     enter_name(pmip, oino, child);
-    omip->INODE.i_links_count + 1;    //inc INODE's links_count by 1 //this is where the fix is 
+    omip->INODE.i_links_count + 1;    //inc INODE's links_count by 1 
     omip->dirty = 1;    //for write back by iput(omip)
     iput(omip);
     iput(pmip);

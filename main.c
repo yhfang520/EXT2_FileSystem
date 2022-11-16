@@ -31,7 +31,7 @@ int  nblocks, ninodes, bmap, imap, iblk, mode;
 char line[128], cmd[32], pathname[128], parameter[128];
 
 #include "alloc_dealloc.c"
-
+#include "util.c"
 #include "Level1/cd_ls_pwd.c"
 #include "Level1/mkdir_creat.c"
 #include "Level1/rmdir.c"
@@ -133,7 +133,8 @@ int main(int argc, char *argv[ ])
     printf("cmd=%s pathname=%s parameter=%s\n", cmd, pathname, parameter);
 
     sscanf(line, "%s %s %d", cmd, pathname, &mode);
-
+    printf("cmd=%s pathname=%s mode=%d\n", cmd, pathname, mode);
+  
     if (strcmp(cmd, "ls")==0)
        ls();
     else if (strcmp(cmd, "cd")==0)
@@ -158,9 +159,12 @@ int main(int argc, char *argv[ ])
     else if (strcmp(cmd, "open")==0)
       open_file(pathname, mode);
     else if (strcmp(cmd, "close")==0)
-      close_file(pathname);
+      close_file(mode);
+    else if(strcmp(cmd, "pfd")==0)
+      pfd();
     else if (strcmp(cmd, "quit")==0)
-       quit();
+      quit();
+
   }
 }
 

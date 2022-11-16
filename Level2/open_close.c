@@ -9,15 +9,19 @@ int truncate(MINODE *mip)
 {
   INODE *ip = &mip->INODE; 
   int i;
-  //iterate through blocks 
+  //iterate through all 12 direct blocks and free them
   for (i=0; i < ip->i_blocks; i++){
     if (ip->i_block[i] != 0)
       bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
     else
       break; 
   }
+  //iterate through 256 indirect blocks and free them
+
+  //iterate through 256 double indirect blocks and free them
+
   //update INODE's time field
-  ip->i_mtime = time(0L);
+  ip->i_atime = ip->i_mtime = time(0L);
   //set INODE's size to 0 and mark Minode[ ] dirty
   ip->i_size = 0;
   mip->dirty = 1; 
@@ -30,7 +34,7 @@ int open_file(char *pathname, int mode)
 {
   int ino, i, pino, r;
   MINODE *mip, *pmip;
-  OFT *open;
+  // OFT *open; not being used 
 
   if (pathname[0] == '/')
     dev = root->dev;
@@ -105,11 +109,11 @@ int open_file(char *pathname, int mode)
   }
 
   printf(" mode = %d: fd = %d\n", mode, running->fd[i]);
-
+  
   //find the SMALLEST i in running PROC's fd[ ] such that fd[i] is NULL
   for (i=0; i < NFD; i++){  //find empty fd in running PROC's fd array 
     if (running->fd[i] == NULL){
-      running->fd[i] = open;
+      running->fd[i] = oftp;  //assign the OFT to the fd[i] this was assigned to open
       break; 
     }
   }
@@ -121,7 +125,7 @@ int open_file(char *pathname, int mode)
   }
   mip->dirty = 1;
   iput(mip);
-
+  printf("%s opened in mode %d\n", pathname, mode);
   return i; // Eventually: return file descriptor of opened file
 }
 
@@ -144,7 +148,7 @@ int close_file(int fd)
     return 0;
   MINODE *mip = oftp->mptr;
   printf("close: refCount = %d", oftp->refCount--); 
-  printf("fd = %d is closed", running->fd[fd]); 
+  printf("fd = %d is closed\n", running->fd[fd]); 
   iput(mip);  //release minode 
   return 0;
 }
