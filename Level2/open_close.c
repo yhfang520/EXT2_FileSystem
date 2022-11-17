@@ -15,13 +15,10 @@ int truncate(MINODE *mip)
     if (ip->i_block[i] != 0)
       bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
     else
-      break; 
+      break;  
   }
-  //iterate through 256 indirect blocks and free them
 
-  //iterate through 256 double indirect blocks and free them
-
-  //update INODE's time field
+  //update INODE's time field 
   ip->i_atime = ip->i_mtime = time(0L);
   //set INODE's size to 0 and mark Minode[ ] dirty
   ip->i_size = 0;
@@ -44,14 +41,13 @@ int open_file(char *pathname, int mode)
   
   //get pathname's inumber, minode pointer 
   ino = getino(pathname, &dev);
-  if (ino == 0){  //if file does not exist 
+  if (ino == 0){  //if file does not exist  
   printf("file not exist\n"); 
-    creat_file(pathname); //creat it first, then 
-    ino = getino(pathname, &dev); //get its ino 
+    creat_file(pathname); 
+    ino = getino(pathname, &dev); 
   }
-  mip = iget(dev, ino);
+  mip = iget(dev, ino); //get the ino and mip of pathname  
 
-  //check mip->INODE.i_mode to verify it's REGULAR file and permission OK.
   if (!S_ISREG(mip->INODE.i_mode)){
     printf("WARNING: %s is not a regular file\n", pathname);
     return -1; 
@@ -67,14 +63,13 @@ int open_file(char *pathname, int mode)
     } 
   }
 
-  //alloctae a FREE OpenFileTable (OFT) and fill in values 
+  //allocate a FREE OpenFileTable(OFT) and fill in values 
   OFT *oftp = (OFT *)malloc(sizeof(OFT)); //build the open fd 
-  oftp->mode = mode;  //mode = 0|1|2|3 for R|W|RW|APPEND
+  oftp->mode = mode;  
   oftp->refCount = 1;
-  oftp->mptr = mip;  //point at the file's minode[]
+  oftp->mptr = mip;  
 
   printf("%s opend in ", pathname);
-  //Depending on the open mode 0|1|2|3, set the OFT's offset accordingly
   switch (mode){  //offset
     case 0: //Read: offset=0
       printf("read");
@@ -98,7 +93,6 @@ int open_file(char *pathname, int mode)
 
   printf(" mode = %d: fd = %d\n", mode, running->fd[i]);
   
-  //find the SMALLEST i in running PROC's fd[ ] such that fd[i] is NULL
   for (i=0; i < NFD; i++){  //find empty fd in running PROC's fd array 
     if (running->fd[i] == NULL){
       running->fd[i] = oftp;  //assign the OFT to the fd[i] this was assigned to open
