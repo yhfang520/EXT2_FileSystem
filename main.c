@@ -31,7 +31,6 @@ int  nblocks, ninodes, bmap, imap, iblk, mode;
 char line[128], cmd[32], pathname[128], parameter[128];
 
 #include "alloc_dealloc.c"
-#include "util.c"
 #include "Level1/cd_ls_pwd.c"
 #include "Level1/mkdir_creat.c"
 #include "Level1/rmdir.c"

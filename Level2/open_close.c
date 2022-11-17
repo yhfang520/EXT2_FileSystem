@@ -9,7 +9,8 @@ int truncate(MINODE *mip)
 {
   INODE *ip = &mip->INODE; 
   int i;
-  //iterate through all 12 direct blocks and free them
+
+  //iterate through blocks 
   for (i=0; i < ip->i_blocks; i++){
     if (ip->i_block[i] != 0)
       bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
@@ -32,7 +33,7 @@ int truncate(MINODE *mip)
 //11.9.1
 int open_file(char *pathname, int mode)
 {
-  int ino, i, pino, r;
+  int ino, i, pino, r, descriptor=-1;
   MINODE *mip, *pmip;
   // OFT *open; not being used 
 
@@ -42,19 +43,11 @@ int open_file(char *pathname, int mode)
     dev = running->cwd->dev;
   
   //get pathname's inumber, minode pointer 
-  ino = getino(pathname);
-  if (ino == -1){  //if file does not exist 
-    char parent[BLKSIZE], buf[BLKSIZE];
-    strcpy(buf, pathname);
-    strcpy(parent, dirname(buf));
-    pino = getino(parent);
-    if (pino == -1)
-      return -1;
-    pmip = iget(dev, ino);
-    r = my_creat(pmip, pathname); //creat it first, then 
-    ino = getino(pathname);  //get its ino 
-    if (ino == -1)
-      return -1; 
+  ino = getino(pathname, &dev);
+  if (ino == 0){  //if file does not exist 
+  printf("file not exist\n"); 
+    creat_file(pathname); //creat it first, then 
+    ino = getino(pathname, &dev); //get its ino 
   }
   mip = iget(dev, ino);
 
@@ -63,12 +56,6 @@ int open_file(char *pathname, int mode)
     printf("WARNING: %s is not a regular file\n", pathname);
     return -1; 
   }
-
-  if (!(mip->INODE.i_uid == running->uid || running->uid))
-    return -1; 
-  
-  if (!(mip->INODE.i_gid == running->gid || running->gid))
-    return -1; 
 
   //check whether the file is ALREADY opened with INCOMPATABLE mode 
   for (i=0; i < NFD; i++){
@@ -90,15 +77,16 @@ int open_file(char *pathname, int mode)
   //Depending on the open mode 0|1|2|3, set the OFT's offset accordingly
   switch (mode){  //offset
     case 0: //Read: offset=0
-      oftp->offset = 0;
       printf("read");
+      oftp->offset = 0;
       break; 
     case 1: //Write: truncate file to 0 sizes 
+      printf("write");
       truncate(mip);
       oftp->offset = 0;
-      printf("write");
       break; 
     case 2: //Read/Write: do NOT truncate file, offset = 0
+      printf("read/write");
       oftp->offset = 0;
       break; 
     case 3: //Append: offset to size of file 
@@ -114,19 +102,20 @@ int open_file(char *pathname, int mode)
   for (i=0; i < NFD; i++){  //find empty fd in running PROC's fd array 
     if (running->fd[i] == NULL){
       running->fd[i] = oftp;  //assign the OFT to the fd[i] this was assigned to open
+      descriptor = i;
       break; 
     }
   }
   
   //update INODE's time filed 
-  mip->INODE.i_atime = time(0L);  //update inode access time 
   if (mode != 0){ //if not R touch atime and mtime 
     mip->INODE.i_mtime = time(0L);
   }
+  mip->INODE.i_atime = time(0L);  //update inode access time 
   mip->dirty = 1;
   iput(mip);
   printf("%s opened in mode %d\n", pathname, mode);
-  return i; // Eventually: return file descriptor of opened file
+  return descriptor; // Eventually: return file descriptor of opened file
 }
 
 int close_file(int fd)
@@ -147,9 +136,11 @@ int close_file(int fd)
   if (oftp->refCount > 0)
     return 0;
   MINODE *mip = oftp->mptr;
-  printf("close: refCount = %d", oftp->refCount--); 
-  printf("fd = %d is closed\n", running->fd[fd]); 
+  mip->dirty = 1; 
   iput(mip);  //release minode 
+  free(oftp);
+  printf("close: refCount = %d\n", oftp->refCount++); 
+  printf("fd = %d is closed\n", running->fd[fd]); 
   return 0;
 }
 
@@ -181,11 +172,31 @@ int pfd()
   printf("   fd     mode     offset     INODE\n");
   printf("  ----    ----     -----     -------\n");
   for (int i=0; i < NFD; i++){
-    if (running->fd[i] == NULL)
-      break;
-    printf("  %d   %s   %d   [%d,%d]\n", i, running->fd[i]->mode, running->fd[i]->offset, running->fd[i]->mptr->dev, running->fd[i]->mptr->ino);
+    if (running->fd[i] != NULL){
+      OFT *cur = running->fd[i];
+      char mode[8];
+
+      switch(cur->mode){
+        case 0:
+          strcpy(mode, "READ"); 
+          break;
+        case 1:
+          strcpy(mode, "WRITE");
+          break;
+        case 2:
+          strcpy(mode, "R/W");
+          break;
+        case 3:
+          strcpy(mode, "APPEND");
+          break; 
+      }
+      printf("   %d    %6s    %4d       [%d,%d]\n", i, mode, cur->offset, cur->mptr->dev, cur->mptr->ino);
+      printf("  --------------------------------------\n");  
+    }else {
+      printf("no opened files\n");
+      break; 
+    }
   }
-  printf("  --------------------------------------\n"); 
   return 1;
 }
 
