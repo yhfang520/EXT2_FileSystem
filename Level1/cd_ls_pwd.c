@@ -54,10 +54,11 @@ int ls_file(MINODE *mip, char *name)
       printf("%c", t2[i]);
   }
 
+  printf("%4d ", inode->i_links_count); //link count 
   printf("%4d ", inode->i_uid); //owner 
   printf("%4d ", inode->i_gid); //gid 
   printf("%8d ", inode->i_size);  //file size 
-  printf("%4d ", inode->i_links_count); //link count 
+  
 
   //print time 
   time_t t = inode->i_ctime; // time in seconds
