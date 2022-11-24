@@ -11,13 +11,13 @@ int write_file()
     int fd = 0;
     char string[BLKSIZE]; 
     pfd();
-    printf("enter fd = \n");
+    printf("enter fd = ");
     scanf("%d", &fd);
-    printf("enter text \n"); 
+    printf("enter text "); 
     scanf("%s", string); 
-    
-    // check if fd is open for writing
-    if(running->fd[fd]->mode != 1 || running->fd[fd]->mode != 2){
+     
+    // check if fd is open for writing 
+    if(running->fd[fd]->mode != 1 && running->fd[fd]->mode != 2){
         printf("File is not open for write\n");
         return -1;
     }
@@ -27,32 +27,40 @@ int write_file()
 
 int my_write(int fd, char buf[], int nbytes)
 {
+    printf("mywrite test: %d %d\n", (int)strlen(buf), nbytes); 
     int count = 0, lbk, startByte, remain, blk;
     int ibuf[256]; 
     char wbuf[BLKSIZE];
     OFT *oftp;
     oftp = running->fd[fd];
     MINODE *mip;
+    // INODE *ip;
+    //*ip = &mip->INODE;  
     mip = oftp->mptr; 
+ 
     while (nbytes > 0)
     {
+        printf("%d\n",nbytes);
         // compute logical block (lbk) and startbyte in lbk
         lbk = oftp->offset / BLKSIZE; // get the logical block number 
         startByte = oftp->offset % BLKSIZE; // get the start byte in the block
 
         if (lbk < 12) 
         {
-            if (ip->i_block[lbk] == 0)
+            printf("mywrite test, direct block\n"); 
+            if (mip->INODE.i_block[lbk] == 0)
             {
                 mip->INODE.i_block[lbk] = balloc(mip->dev); // allocate a block
             }
             blk = mip->INODE.i_block[lbk];
+            printf("%d\n",nbytes);
+         
         }        
         else if (lbk >= 12 && lbk < 256 + 12)
         {
-          
+            printf("mywrite test, indirect block\n"); 
             // indirect blocks
-            if (ip->i_block[12] == 0)
+            if (mip->INODE.i_block[12] == 0)
             {
                 if (mip->INODE.i_block[12] == 0)    //no data block 
                 {
@@ -71,6 +79,7 @@ int my_write(int fd, char buf[], int nbytes)
         }
         else    //double indirect blcoks 
         {
+            printf("mywrite test, double indirect block\n"); 
             lbk -= (12 + 256);
             if (mip->INODE.i_block[13] == 0)    //if accesss pointer is empty, allocate a block and save its pointer 
             {
@@ -82,12 +91,15 @@ int my_write(int fd, char buf[], int nbytes)
             int i = lbk / 256; // integer of the indirect block
             int j = lbk % 256;
         } 
-        get_block(mip->dev, blk,wbuf);  //read disk block into wbuf[]
+        printf("mywrite test get data block blk into wbuf\n"); 
+        memset(wbuf, 0, BLKSIZE);   //reset wbuf, not add too many characters in the last buffer 
+        get_block(mip->dev, blk, wbuf);  //read disk block into wbuf[]
         char *cp = wbuf + startByte;    //cp points at startByte in wbuf[]
         int remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
         int *cq = buf; 
+        printf("%d\n",nbytes);
         while (remain > 0){ //write until remain == 0 
-        
+            printf("%d\n",nbytes);
             // change this later to write more than 1 byte at a time
             *cp++ = *cq++;  //cq points at buf[]
             nbytes--; remain--; //dec counts
@@ -95,16 +107,16 @@ int my_write(int fd, char buf[], int nbytes)
             //if offset is greater than size increase file size 
             if (oftp->offset > mip->INODE.i_size){ //especially for RW|APPEND mode
                 mip->INODE.i_size++;
-            }
-            
+            }    
             //break when we have read all the bytes 
             if (nbytes <= 0)
                 break; 
-           
         } 
+        printf("%d\n",nbytes);
         put_block(mip->dev, blk, wbuf); //put wbuf into data block blk 
         // loop back to outer while to write more .... until nbytes are written    
     }
+    printf("mywrite test make dirty\n");
     mip->dirty = 1; //mark mip dirty for iput()
     printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);
     return nbytes; 
