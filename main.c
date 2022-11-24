@@ -37,6 +37,7 @@ char line[128], cmd[32], pathname[128], parameter[128];
 #include "Level1/link_unlink.c"
 #include "Level1/symlink.c"
 #include "Level2/open_close.c"
+#include "Level2/write_cp.c"
 
 int init()
 {
@@ -127,12 +128,17 @@ int main(int argc, char *argv[ ])
        continue;
     pathname[0] = 0;
     parameter[0] = 0;
+    
 
+    
     sscanf(line, "%s %s %s", cmd, pathname, parameter);
     printf("cmd=%s pathname=%s parameter=%s\n", cmd, pathname, parameter);
 
     sscanf(line, "%s %s %d", cmd, pathname, &mode);
     printf("cmd=%s pathname=%s mode=%d\n", cmd, pathname, mode);
+
+    sscanf(line, "%s %d %s", cmd, &fd, pathname);
+    printf("cmd=%s fd=%d pathname=%s\n", cmd, fd, pathname);
   
     if (strcmp(cmd, "ls")==0)
        ls();
@@ -161,6 +167,8 @@ int main(int argc, char *argv[ ])
       close_file(mode);
     else if(strcmp(cmd, "pfd")==0)
       pfd();
+    else if (strcmp(cmd, "write")==0)
+      write_file();
     else if (strcmp(cmd, "quit")==0)
       quit();
 

@@ -9,14 +9,26 @@ int truncate(MINODE *mip)
 {
   INODE *ip = &mip->INODE; 
   int i;
+  char buf[BLKSIZE];
 
   //iterate through blocks 
-  for (i=0; i < ip->i_blocks; i++){
+  for (i=0; i < 12; i++){
     if (ip->i_block[i] != 0)
       bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
     else
       break;  
   }
+  // indirect blocks
+  // if (ip->i_block[12] != 0){
+  //   get_block(mip->dev, ip->i_block[12], buf); // this points to a block of 256 integers
+  //   int count = 0; 
+  //   int *indirect = (int *)buf; 
+  //   while (){
+  //     if (indirect[count] == 0)
+  //       break; 
+    
+  //   }
+  //}
 
   //update INODE's time field 
   ip->i_atime = ip->i_mtime = time(0L);
