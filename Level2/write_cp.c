@@ -19,7 +19,7 @@ int write_file()
     // check if fd is open for writing
     if(running->fd[fd]->mode != 1 || running->fd[fd]->mode != 2){
         printf("File is not open for write\n");
-        break;
+        return -1;
     }
     my_write(fd, string, sizeof(string));
     return 1; 
@@ -27,9 +27,13 @@ int write_file()
 
 int my_write(int fd, char buf[], int nbytes)
 {
-    int count = 0, lbk, startByte, remain, blk, avil, i, j;
+    int count = 0, lbk, startByte, remain, blk;
     int ibuf[256]; 
     char wbuf[BLKSIZE];
+    OFT *oftp;
+    oftp = running->fd[fd];
+    MINODE *mip;
+    mip = oftp->mptr; 
     while (nbytes > 0)
     {
         // compute logical block (lbk) and startbyte in lbk
@@ -89,7 +93,7 @@ int my_write(int fd, char buf[], int nbytes)
             nbytes--; remain--; //dec counts
             oftp->offset++; //dec counts 
             //if offset is greater than size increase file size 
-            if (oftp->offset > INODE.i_size){ //especially for RW|APPEND mode
+            if (oftp->offset > mip->INODE.i_size){ //especially for RW|APPEND mode
                 mip->INODE.i_size++;
             }
             
