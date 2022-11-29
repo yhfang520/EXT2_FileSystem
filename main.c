@@ -169,6 +169,8 @@ int main(int argc, char *argv[ ])
       pfd();
     else if (strcmp(cmd, "write")==0)
       write_file();
+    else if (strcmp(cmd, "cp")==0)
+      my_cp(pathname, parameter);
     else if (strcmp(cmd, "quit")==0)
       quit();
 

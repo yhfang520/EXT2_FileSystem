@@ -122,9 +122,29 @@ int my_write(int fd, char buf[], int nbytes)
     return nbytes; 
 }
 
-int my_cp(char *pathname)
+int my_cp(char *src, char *dest)
 {
-    return 1;
+    int src_ino;
+    int src_fd, dest_fd;
+    char buf[BLKSIZE];
+   
+    // check if src exists
+    src_ino = getino(src);
+    if (src_ino == 0)
+    {
+        printf("Source file does not exist\n");
+        return -1;
+    }
+
+
+    // open src for R and dest for W
+    while (n = read(src_fd, buf, BLKSIZE)) // read from src
+    {
+        write(dest_fd, buf, n); // write n bytes from buf[ ] into fd
+    }
+    close(src_fd);
+    close(dest_fd);
+    return 0;
 }
 
 #endif
