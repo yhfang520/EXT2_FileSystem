@@ -57,7 +57,7 @@ int ls_file(MINODE *mip, char *name)
   printf("%4d ", inode->i_links_count); //link count 
   printf("%4d ", inode->i_uid); //owner 
   printf("%4d ", inode->i_gid); //gid 
-  printf("%8d ", inode->i_size);  //file size 
+
   
 
   //print time 
@@ -65,6 +65,9 @@ int ls_file(MINODE *mip, char *name)
   strcpy(ftime, ctime(&t)); // convert to calendar time
   ftime[strlen(ftime)-1] = 0; // kill \n at end
   printf("%s ", ftime);
+
+  // show file size
+  printf("%8d ", inode->i_size);
 
   //print name 
   printf("%s", basename(name)); // print file basename

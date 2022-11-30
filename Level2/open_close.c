@@ -196,8 +196,8 @@ int my_lseek(int fd, int position)
 int pfd()
 {
   //display the currently opned files to help user know what files has been opened 
-  printf("   fd     mode     offset     INODE\n");
-  printf("  ----    ----     -----     -------\n");
+  printf("   fd     mode     count     offset     INODE\n");
+  printf("  ----    ----     -----     -----     -------\n");
   for (int i=0; i < NFD; i++){
     if (running->fd[i]){
       OFT *cur = running->fd[i];
@@ -216,7 +216,8 @@ int pfd()
           strcpy(mode, "APPEND");
           break; 
       }
-      printf("   %d    %6s    %4d       [%d,%d]\n", i, mode, cur->offset, cur->mptr->dev, cur->mptr->ino);
+      // print fd, mode, count, offset, and INODE
+      printf("   %d       %s       %d         %d        [%d, %d]\n", i, mode, cur->refCount, cur->offset, cur->mptr->dev, cur->mptr->ino);
       printf("  --------------------------------------\n");  
     }
   }
