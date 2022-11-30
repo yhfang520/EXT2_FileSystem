@@ -164,7 +164,7 @@ int main(int argc, char *argv[ ])
     else if (strcmp(cmd, "open")==0)
       open_file(pathname, mode);
     else if (strcmp(cmd, "close")==0)
-      close_file(mode);
+      close_file(atoi(pathname));
     else if(strcmp(cmd, "pfd")==0)
       pfd();
     else if (strcmp(cmd, "write")==0)

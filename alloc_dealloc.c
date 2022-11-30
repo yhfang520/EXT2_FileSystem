@@ -156,9 +156,6 @@ int bdalloc(int dev, int bno)
 {
   //deallocates a disk block(number) bno 
   char buf[BLKSIZE];
-  if (bno > nblocks){
-    return 0; 
-  }
   get_block(dev, bmap, buf);  //get block 
   clr_bit(buf, bno-1);  //clear bits to 0
   put_block(dev, bmap, buf);  //write block back 

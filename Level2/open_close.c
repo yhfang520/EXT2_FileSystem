@@ -8,32 +8,53 @@
 int truncate(MINODE *mip)
 {
   INODE *ip = &mip->INODE; 
-  int i;
+  int i, count=0, double_count = 0;;
   char buf[BLKSIZE];
+  int ibuf[256], dbuf[256], ddbuf[256];
 
   //iterate through blocks 
   for (i=0; i < 12; i++){
-    if (ip->i_block[i] != 0)
-      bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
-    else
-      break;  
+    if (ip->i_block[i] == 0)
+      break; 
+    bdalloc(dev, ip->i_block[i]);
+    bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
   }
-  // indirect blocks
-  // if (ip->i_block[12] != 0){
-  //   get_block(mip->dev, ip->i_block[12], buf); // this points to a block of 256 integers
-  //   int count = 0; 
-  //   int *indirect = (int *)buf; 
-  //   while (){
-  //     if (indirect[count] == 0)
-  //       break; 
     
-  //   }
-  //}
-
-  //update INODE's time field 
-  ip->i_atime = ip->i_mtime = time(0L);
+  if (ip->i_block[12] != 0){  //indirect blocks
+    printf("indirect test\n");
+    get_block(dev, ip->i_block[12], ibuf);  //ibuf[0] ibuf[1] 
+    while (count < 256){
+      if (ibuf[count] == 0)
+        break; 
+      bdalloc(dev, ibuf[count]);
+      ibuf[count] = 0; 
+      count++;   
+    }
+    bdalloc(dev, ip->i_block[12]); 
+    ip->i_block[12] = 0; 
+  } 
+  
+  if (ip->i_block[13] != 0){  //double indirect blocks
+    printf("double indirect test\n");
+    get_block(dev, ip->i_block[13], dbuf);  //dbuf=dbuf[0] dbuf[1] dbuf[2] each one is an number 
+    while (count < 256){
+      if (dbuf[count] == 0)
+        break; 
+      get_block(dev, dbuf[count], ddbuf);
+      while (double_count < 256){
+        if (ddbuf[double_count] == 0)
+          break; 
+        bdalloc(dev, ddbuf[double_count]);
+        double_count++;     
+      }
+    }
+    bdalloc(dev, ip->i_block[13]);
+    ip->i_block[13] = 0;
+  }
+  
+  mip->INODE.i_blocks = 0;
   //set INODE's size to 0 and mark Minode[ ] dirty
-  ip->i_size = 0;
+  mip->INODE.i_size = 0;
   mip->dirty = 1; 
 
   return 1;
@@ -114,12 +135,12 @@ int open_file(char *pathname, int mode)
   }
   
   //update INODE's time filed 
-  if (mode != 0){ //if not R touch atime and mtime 
+  if (mode > 0){ //if not R touch atime and mtime 
     mip->INODE.i_mtime = time(0L);
   }
   mip->INODE.i_atime = time(0L);  //update inode access time 
   mip->dirty = 1;
-  iput(mip);
+  //iput(mip);
   printf("%s opened in mode %d\n", pathname, mode);
   return descriptor; // Eventually: return file descriptor of opened file
 }
@@ -142,9 +163,9 @@ int close_file(int fd)
   if (oftp->refCount > 0)
     return 0;
   MINODE *mip = oftp->mptr;
-  mip->dirty = 1; 
+  //mip->dirty = 1; 
   iput(mip);  //release minode 
-  free(oftp);
+  //free(oftp);
   printf("close: refCount = %d\n", oftp->refCount++); 
   printf("fd = %d is closed\n", running->fd[fd]); 
   return 0;
@@ -178,10 +199,9 @@ int pfd()
   printf("   fd     mode     offset     INODE\n");
   printf("  ----    ----     -----     -------\n");
   for (int i=0; i < NFD; i++){
-    if (running->fd[i] != NULL){
+    if (running->fd[i]){
       OFT *cur = running->fd[i];
       char mode[8];
-
       switch(cur->mode){
         case 0:
           strcpy(mode, "READ"); 
@@ -198,12 +218,9 @@ int pfd()
       }
       printf("   %d    %6s    %4d       [%d,%d]\n", i, mode, cur->offset, cur->mptr->dev, cur->mptr->ino);
       printf("  --------------------------------------\n");  
-    }else {
-      printf("no opened files\n");
-      break; 
     }
   }
-  return 1;
+  return 0;
 }
 
 int dup(int fd)

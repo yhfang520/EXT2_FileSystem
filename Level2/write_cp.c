@@ -8,35 +8,35 @@
 
 int write_file()
 {
-    int fd = 0;
-    char string[BLKSIZE]; 
+    int fd;
+    char string[BLKSIZE] = {0}; 
     pfd();
     printf("enter fd = ");
     scanf("%d", &fd);
     printf("enter text "); 
-    scanf("%s", string); 
-     
+    scanf("%s", &string); 
+
     // check if fd is open for writing 
-    if(running->fd[fd]->mode != 1 && running->fd[fd]->mode != 2){
+    printf("current mode = %d \n", running->fd[fd]->mode);
+
+    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2)
+        return (my_write(fd, string, strlen(string)));
+    else 
         printf("File is not open for write\n");
-        return -1;
-    }
-    my_write(fd, string, sizeof(string));
-    return 1; 
+    return -1; 
 }
 
 int my_write(int fd, char buf[], int nbytes)
 {
     printf("mywrite test: %d %d\n", (int)strlen(buf), nbytes); 
-    int count = 0, lbk, startByte, remain, blk;
+    int count = nbytes, lbk, startByte, remain, blk;
     int ibuf[256]; 
     char wbuf[BLKSIZE];
     OFT *oftp;
     oftp = running->fd[fd];
     MINODE *mip;
-    // INODE *ip;
-    //*ip = &mip->INODE;  
-    mip = oftp->mptr; 
+    mip = oftp->mptr;
+    INODE *ip = &mip->INODE;  
  
     while (nbytes > 0)
     {
@@ -53,7 +53,7 @@ int my_write(int fd, char buf[], int nbytes)
                 mip->INODE.i_block[lbk] = balloc(mip->dev); // allocate a block
             }
             blk = mip->INODE.i_block[lbk];
-            printf("%d\n",nbytes);
+            printf("direct block done\n");
          
         }        
         else if (lbk >= 12 && lbk < 256 + 12)
@@ -97,9 +97,9 @@ int my_write(int fd, char buf[], int nbytes)
         char *cp = wbuf + startByte;    //cp points at startByte in wbuf[]
         int remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
         int *cq = buf; 
-        printf("%d\n",nbytes);
+        //printf("%d\n",nbytes);
         while (remain > 0){ //write until remain == 0 
-            printf("%d\n",nbytes);
+            //printf("%d\n",nbytes);
             // change this later to write more than 1 byte at a time
             *cp++ = *cq++;  //cq points at buf[]
             nbytes--; remain--; //dec counts
@@ -112,13 +112,13 @@ int my_write(int fd, char buf[], int nbytes)
             if (nbytes <= 0)
                 break; 
         } 
-        printf("%d\n",nbytes);
+        //printf("%d\n",nbytes);
         put_block(mip->dev, blk, wbuf); //put wbuf into data block blk 
         // loop back to outer while to write more .... until nbytes are written    
     }
     printf("mywrite test make dirty\n");
     mip->dirty = 1; //mark mip dirty for iput()
-    printf("wrote %d char into file descriptor fd=%d\n", nbytes, fd);
+    printf("wrote %d char into file descriptor fd=%d\n", count, fd);
     return nbytes; 
 }
 
