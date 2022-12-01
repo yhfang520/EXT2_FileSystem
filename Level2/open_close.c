@@ -76,11 +76,13 @@ int open_file(char *pathname, int mode)
   
   //get pathname's inumber, minode pointer 
   ino = getino(pathname, &dev);
+
   if (ino == 0){  //if file does not exist  
   printf("file not exist\n"); 
     creat_file(pathname); 
     ino = getino(pathname, &dev); 
   }
+
   mip = iget(dev, ino); //get the ino and mip of pathname  
 
   if (!S_ISREG(mip->INODE.i_mode)){
@@ -165,9 +167,9 @@ int close_file(int fd)
   if (oftp->refCount > 0)
     return 0;
   MINODE *mip = oftp->mptr;
-  //mip->dirty = 1; 
+  mip->dirty = 1; 
   iput(mip);  //release minode 
-  //free(oftp);
+  free(oftp);
   printf("close: refCount = %d\n", oftp->refCount++); 
   printf("fd = %d is closed\n", running->fd[fd]); 
   return 0;

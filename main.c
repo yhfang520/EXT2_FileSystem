@@ -130,8 +130,6 @@ int main(int argc, char *argv[ ])
     pathname[0] = 0;
     parameter[0] = 0;
     
-
-    
     sscanf(line, "%s %s %s", cmd, pathname, parameter);
     printf("cmd=%s pathname=%s parameter=%s\n", cmd, pathname, parameter);
 

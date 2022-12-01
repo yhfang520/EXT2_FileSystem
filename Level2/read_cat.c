@@ -42,7 +42,6 @@ int my_read(int fd, char buf[], int nbytes)
   char *cq = buf;
   char readbuf[BLKSIZE];
 
-
   while(nbytes && avil)
   {
     // nbytes test
@@ -68,21 +67,20 @@ int my_read(int fd, char buf[], int nbytes)
     get_block(mip->dev, blk, readbuf);
     char *cp = readbuf + startByte;
     remain = BLKSIZE - startByte;
-    while(remain > 0)
-    {
+    while(remain > 0){
       *cq++ = *cp++;
       oftp->offset++;
       count++;
       avil--; nbytes--; remain--;
-      if(nbytes <= count || avil <= 0)
-      {
+      if(nbytes <= count || avil <= 0){
         break;
       }
     }
+    
   }
   // print the contents of buf[ ]
-  printf("--------------------------------------------\n");
-  printf("%s \n", buf);
+  // printf("--------------------------------------------\n");
+  printf("%s\n", buf);
   printf("--------------------------------------------\n");
   printf("myread: read %d char from file descriptor %d\n", count, fd);
   return count; // Eventually: Return the actual number of bytes read
@@ -92,25 +90,18 @@ int cat_file(char *pathname)
 {
   char mybuf[1024];
   int dummy = 0;
-  int n, fd;
+  int n = 0, fd;
   fd = open_file(pathname, 0);
 
   //check fd is valid
-  if(fd < 0)
-  {
+  if(fd < 0){
     printf("cat: open file failed\n");
     return -1;
   }
- 
-  while(n = my_read(fd, mybuf, 1024))
-  {
+
+  while(n = my_read(fd, mybuf, 1024)){
     mybuf[n] = 0;
-    while(mybuf[dummy] != 0)
-    {
-      printf("%c", mybuf[dummy]);
-      dummy++;
-    }
-    dummy = 0;
+    printf("%s", mybuf);
   }
   close_file(fd);
   return 1;

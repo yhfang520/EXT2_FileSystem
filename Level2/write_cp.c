@@ -14,53 +14,43 @@ int write_file()
     printf("enter fd = ");
     scanf("%d", &fd);
     printf("enter text : "); 
-    scanf("%s", &string); 
+    scanf("%s", string); 
 
     // check if fd is open for writing 
     printf("current mode = %d \n", running->fd[fd]->mode);
 
-    if(running->fd[fd]->mode == 1 || running->fd[fd]->mode == 2)
-        return (my_write(fd, string, strlen(string)));
-    else 
+    if(running->fd[fd]->mode != 1 || running->fd[fd]->mode != 2)
         printf("File is not open for write\n");
-    return -1; 
+    return(my_write(fd, string, strlen(string)));
 }
 
 int my_write(int fd, char buf[], int nbytes)
 {
-    printf("mywrite test: %d %d\n", (int)strlen(buf), nbytes); 
-    int count = nbytes, lbk, startByte, remain, blk;
-    int ibuf[256] = {0}; 
-    char wbuf[BLKSIZE];
+    int count = nbytes, lbk, startByte, remain, blk, iblk, dblk;
+    int ibuf[256], dbuf[256];
+    char wbuf[1024];
     OFT *oftp;
     oftp = running->fd[fd];
     MINODE *mip;
     mip = oftp->mptr;
-    //INODE *ip = &mip->INODE;  
- 
-    while (nbytes > 0)
-    {
+    char *cq = buf; 
+    
+    printf("nbytes = %d\n", nbytes);
+    while (nbytes > 0){
         // compute logical block (lbk) and startbyte in lbk
         lbk = oftp->offset / BLKSIZE; // get the logical block number 
         startByte = oftp->offset % BLKSIZE; // get the start byte in the block
-
-        if (lbk < 12) 
-        {
-            if (mip->INODE.i_block[lbk] == 0 || (lbk == 0))
-            {
+        if (lbk < 12){
+            if (mip->INODE.i_block[lbk] == 0){
                 mip->INODE.i_block[lbk] = balloc(mip->dev); // allocate a block
             }
             blk = mip->INODE.i_block[lbk];
-            printf("allocate direct block blk=%d\n", blk);
-         
-        }        
-        else if (lbk >= 12 && lbk < 256 + 12)
-        {
+            printf("allocate direct block blk=%d\n", blk); 
+        }  
+        else if (lbk >= 12 && lbk < 256 + 12){
             // indirect blocks
-            if (mip->INODE.i_block[12] == 0)
-            {
-                if (mip->INODE.i_block[12] == 0)    //no data block 
-                {
+            if (mip->INODE.i_block[12] == 0){
+                if (mip->INODE.i_block[12] == 0){    //no data block 
                     mip->INODE.i_block[12] = balloc(mip->dev);  //allocate a block 
                     get_block(mip->dev, mip->INODE.i_block[12], ibuf);   //get block into memory 
                     bzero(buf, BLKSIZE); // clear the block 
@@ -75,29 +65,34 @@ int my_write(int fd, char buf[], int nbytes)
                 printf("allocate indirect block blk=%d\n", blk);
             }
         }
-        else    //double indirect blcoks 
-        {
-            lbk -= (12 + 256);
-            if (mip->INODE.i_block[13] == 0)    //if accesss pointer is empty, allocate a block and save its pointer 
-            {
+        else{    //double indirect blcoks 
+            iblk = (lbk - (12 + 256) / 256);
+            dblk = (lbk - (23 + 256) % 256);
+            if (mip->INODE.i_block[13] == 0){    //if accesss pointer is empty, allocate a block and save its pointer 
                 mip->INODE.i_block[13] = balloc(mip->dev);  //allocate a block 
                 get_block(mip->dev, mip->INODE.i_block[13], ibuf);   //get block into memory 
-                bzero(buf, BLKSIZE); // clear the block 
+                bzero(ibuf, 256); // clear the block 
             }
             get_block(mip->dev, mip->INODE.i_block[13], ibuf); // get the block into memory 
-            int i = lbk / 256; // integer of the indirect block
-            int j = lbk % 256;
+            if (ibuf[iblk] == 0){
+                ibuf[iblk] = balloc(mip->dev);
+                put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
+                get_block(mip->dev, ibuf[iblk], (char *)dbuf);
+                bzero(dbuf, 256);
+                put_block(mip->dev, ibuf[iblk], (char *)dbuf);
+            }
+            get_block(mip->dev, ibuf[iblk], (char *)dbuf);
+            if (dbuf[dblk] == 0){
+                dbuf[dblk] = balloc(mip->dev);
+                put_block(mip->dev, ibuf[iblk], (char *)dbuf);
+            }
+            blk = dbuf[dblk];
             printf("allocate double indirect block blk=%d\n", blk);
         } 
-        memset(wbuf, 0, BLKSIZE);   //reset wbuf, not add too many characters in the last buffer 
         get_block(mip->dev, blk, wbuf);  //read disk block into wbuf[]
         char *cp = wbuf + startByte;    //cp points at startByte in wbuf[]
         int remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
-        int *cq = buf; 
-        //printf("%d\n",nbytes);
-        while (remain > 0){ //write until remain == 0 
-            //printf("%d\n",nbytes);
-            // change this later to write more than 1 byte at a time
+        while (remain > 0){
             *cp++ = *cq++;  //cq points at buf[]
             nbytes--; remain--; //dec counts
             oftp->offset++; //dec counts 
@@ -109,7 +104,6 @@ int my_write(int fd, char buf[], int nbytes)
             if (nbytes <= 0)
                 break; 
         } 
-        //printf("%d\n",nbytes);
         put_block(mip->dev, blk, wbuf); //put wbuf into data block blk 
         // loop back to outer while to write more .... until nbytes are written    
     }
@@ -120,26 +114,26 @@ int my_write(int fd, char buf[], int nbytes)
 
 int my_cp(char *src, char *dest)
 {
-    int src_ino;
-    int src_fd, dest_fd;
-    char buf[BLKSIZE];
-   
-    // check if src exists
-    src_ino = getino(src);
-    if (src_ino == 0)
-    {
-        printf("Source file does not exist\n");
-        return -1;
+    int n = 0; 
+    char buf[1024];
+    //Open the source file as a read, open the target file as a write
+    int fd = open_file(src, 0);   //open src for read
+    int gd = open_file(dest, 1);  //open dst for WR|CREAT
+
+    // buf[1024] = 0;
+    pfd();
+    if (gd < 0){
+        printf("creating file \n");
+        creat_file(dest);
+        gd = open_file(dest, "1"); 
     }
-
-
     // open src for R and dest for W
-    while (n = read(src_fd, buf, BLKSIZE)) // read from src
-    {
-        write(dest_fd, buf, n); // write n bytes from buf[ ] into fd
+    while (n = read_file(fd, buf, 1024)){ // read from src
+        //buf[n] = 0;
+        my_write(gd, buf, n); // write n bytes from buf[ ] into fd
     }
-    close(src_fd);
-    close(dest_fd);
+    close_file(fd);
+    close_file(gd);
     return 0;
 }
 
