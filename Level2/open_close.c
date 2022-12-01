@@ -12,17 +12,19 @@ int truncate(MINODE *mip)
   char buf[BLKSIZE];
   int ibuf[256], dbuf[256], ddbuf[256];
 
+  //Refernce by KC : )
   //iterate through blocks 
-  for (i=0; i < 12; i++){
+  for (i=0; i < 15; i++){ //print all 15 i_block[] numbers; first 12 are DIRECT blocks 
+    printf("i_block[%d] = %d\n", i, ip->i_block[i]);
     if (ip->i_block[i] == 0)
       break; 
     bdalloc(dev, ip->i_block[i]);
     bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
   }
-    
+  
   if (ip->i_block[12] != 0){  //indirect blocks
-    printf("indirect test\n");
-    get_block(dev, ip->i_block[12], ibuf);  //ibuf[0] ibuf[1] 
+    printf("------- INDIRECT BLOCKS -------\n");
+    get_block(dev, ip->i_block[12], (char *)ibuf);  //ibuf[0] ibuf[1] 
     while (count < 256){
       if (ibuf[count] == 0)
         break; 
@@ -35,12 +37,12 @@ int truncate(MINODE *mip)
   } 
   
   if (ip->i_block[13] != 0){  //double indirect blocks
-    printf("double indirect test\n");
-    get_block(dev, ip->i_block[13], dbuf);  //dbuf=dbuf[0] dbuf[1] dbuf[2] each one is an number 
+    printf("------- DOUBLE INDIRECT BLOCKS -------\n");
+    get_block(dev, ip->i_block[13], (char *)dbuf);  //dbuf=dbuf[0] dbuf[1] dbuf[2] each one is an number 
     while (count < 256){
       if (dbuf[count] == 0)
         break; 
-      get_block(dev, dbuf[count], ddbuf);
+      get_block(dev, dbuf[count], (char *)ddbuf); //get number into ddbuf[]
       while (double_count < 256){
         if (ddbuf[double_count] == 0)
           break; 
@@ -217,8 +219,8 @@ int pfd()
           break; 
       }
       // print fd, mode, count, offset, and INODE
-      printf("   %d       %s       %d         %d        [%d, %d]\n", i, mode, cur->refCount, cur->offset, cur->mptr->dev, cur->mptr->ino);
-      printf("  --------------------------------------\n");  
+      printf("    %d \t  %s      %d        %d        [%d, %d]\n", i, mode, cur->refCount, cur->offset, cur->mptr->dev, cur->mptr->ino);
+      printf("  ----------------------------------------------\n");  
     }
   }
   return 0;

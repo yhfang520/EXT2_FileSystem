@@ -120,7 +120,8 @@ int main(int argc, char *argv[ ])
   // WRTIE code here to create P1 as a USER process
   
   while(1){
-    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|symlink|unlink|readlink|open|close|lseek|quit] ");
+    printf("input command : [ls|cd|pwd|mkdir|creat|rmdir|link|symlink|unlink|readlink\n");
+    printf("\t\t|open|close|lseek|read|write|cat|cp|quit] ");
     fgets(line, 128, stdin);
     line[strlen(line)-1] = 0;
 
