@@ -78,9 +78,9 @@ int my_read(int fd, char buf[], int nbytes)
     }
     
   }
-  // print the contents of buf[ ]
-  // printf("--------------------------------------------\n");
-  printf("%s\n", buf);
+
+  printf("--------------------------------------------\n");
+  printf("\n%s \n", buf);
   printf("--------------------------------------------\n");
   printf("myread: read %d char from file descriptor %d\n", count, fd);
   return count; // Eventually: Return the actual number of bytes read
@@ -101,6 +101,7 @@ int cat_file(char *pathname)
 
   while(n = my_read(fd, mybuf, 1024)){
     mybuf[n] = 0;
+    printf("test\n");
     printf("%s", mybuf);
   }
   close_file(fd);
