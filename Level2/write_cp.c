@@ -27,7 +27,7 @@ int write_file()
 int my_write(int fd, char buf[], int nbytes)
 {
     int count = nbytes, lbk, startByte, remain, blk, iblk, dblk;
-    int ibuf[256], dbuf[256];
+    char *ibuf[256], dbuf[256];
     char wbuf[1024];
     OFT *oftp;
     oftp = running->fd[fd];
@@ -52,9 +52,9 @@ int my_write(int fd, char buf[], int nbytes)
             printf("indirect blocks\n");
             if (mip->INODE.i_block[12] == 0){
                 mip->INODE.i_block[12] = balloc(mip->dev); // allocate a block
-                get_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf);  //get block into memory 
+                get_block(mip->dev, mip->INODE.i_block[12], ibuf);  //get block into memory 
                 bzero(ibuf, 256); // clear the block
-                put_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf);  //put block into memory 
+                put_block(mip->dev, mip->INODE.i_block[12], ibuf);  //put block into memory 
             }
             get_block(mip->dev, mip->INODE.i_block[12], ibuf); // get the block
             //blk = ibuf[lbk - 12]; // get the block number

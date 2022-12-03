@@ -39,16 +39,14 @@ int my_read(int fd, char buf[], int nbytes)
 {
   OFT *oftp = running->fd[fd];
   MINODE *mip = oftp->mptr;
-  int count = 0, lbk, startByte, blk, avil, remain, dblk, lblk;
-  char ibuf[256], buf13[256], dbuf[256];
+  int count = 0, lbk, startByte, blk, avil, remain, dblk;
+  int ibuf[256], buf13[256], dbuf[256], ebuf[BLKSIZE];
   avil = mip->INODE.i_size - oftp->offset;
   char *cq = buf;
   char readbuf[BLKSIZE];
   
-  
   while(nbytes && avil)
   {
-
     lbk = oftp->offset / BLKSIZE;
     startByte = oftp->offset % BLKSIZE;
 
@@ -58,43 +56,48 @@ int my_read(int fd, char buf[], int nbytes)
     }
     else if(lbk >= 12 && lbk < 256 + 12) // indreact block
     {
-      printf("indirect blocks\n");
+      printf("\nmyread: indirect blocks\n");
       get_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf); // get block into memory
-      blk = ibuf[lbk - 12]; 
+      blk = ibuf[lbk - 12];
     }
     else{ // double indirect block
-      printf("double indirect blocks\n");
-      lblk -= (12 + 256);
+      printf("\nmyread: double indirect blocks\n");
+      lbk -= 268;
       get_block(mip->dev, mip->INODE.i_block[13], (char *)buf13);
-      dblk = buf13[lblk/256];
+      dblk = buf13[lbk/256];
       get_block(mip->dev, dblk, (char *)dbuf);
-      blk = dbuf[lblk % 256];
+      blk = dbuf[lbk % 256];
     }
     get_block(mip->dev, blk, readbuf);
     char *cp = readbuf + startByte;
     remain = BLKSIZE - startByte;
 
-    if (nbytes <= avil && nbytes <= remain){
-      strncpy(cq, cp, nbytes);
-      oftp->offset = oftp->offset + nbytes;
-      count = count + nbytes;
-      avil = avil - nbytes;
-      nbytes = 0;
-      remain = remain - nbytes; 
-    } else if (avil <= remain && avil <= nbytes){
-      strncpy(cq, cp, avil);
-      oftp->offset = oftp->offset + avil;
-      count = count + avil;
-      avil = 0;
-      nbytes = nbytes - avil;
-      remain = remain - avil; 
-    } else{
-      strncpy(cq, cp, remain);
-      oftp->offset = oftp->offset + remain;
-      count = count + remain;
-      avil = avil - remain;
-      nbytes = nbytes - remain;
-      remain = 0; 
+    while (remain > 0){
+      if (nbytes <= avil && nbytes <= remain){
+        strncpy(cq, cp, nbytes);
+        oftp->offset = oftp->offset + nbytes;
+        count = count + nbytes;
+        avil = avil - nbytes;
+        nbytes = 0;
+        remain = remain - nbytes; 
+      } else if (avil <= remain && avil <= nbytes){
+        strncpy(cq, cp, avil);
+        oftp->offset = oftp->offset + avil;
+        count = count + avil;
+        avil = 0;
+        nbytes = nbytes - avil;
+        remain = remain - avil; 
+      } else{
+        strncpy(cq, cp, remain);
+        oftp->offset = oftp->offset + remain;
+        count = count + remain;
+        avil = avil - remain;
+        nbytes = nbytes - remain;
+        remain = 0; 
+      }
+      if (nbytes <= 0 || avil <= 0){
+        break;
+    }
     }
   }
   // printf("--------------------------------------------\n");
