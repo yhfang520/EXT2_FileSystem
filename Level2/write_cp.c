@@ -17,9 +17,9 @@ int write_file()
     scanf("%s", string); 
 
     // check if fd is open for writing 
-    //printf("current mode = %d \n", running->fd[fd]->mode);
+    printf("current mode = %d \n", running->fd[fd]->mode);
 
-    if(running->fd[fd]->mode != 1 || running->fd[fd]->mode != 2)
+    if( (running->fd[fd]->mode != 1) && (running->fd[fd]->mode != 2))
         printf("File is not open for write\n");
     return(my_write(fd, string, strlen(string)));
 }
@@ -49,27 +49,33 @@ int my_write(int fd, char buf[], int nbytes)
         }  
         else if (lbk >= 12 && lbk < 256 + 12){
             // indirect blocks
+            printf("indirect blocks\n");
             if (mip->INODE.i_block[12] == 0){
                 mip->INODE.i_block[12] = balloc(mip->dev); // allocate a block
-                bzero(ibuf, BLKSIZE); // clear the block
+                get_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf);  //get block into memory 
+                bzero(ibuf, 256); // clear the block
+                put_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf);  //put block into memory 
             }
             get_block(mip->dev, mip->INODE.i_block[12], ibuf); // get the block
-            iblk = ibuf[lbk - 12]; // get the block number
-            if (iblk == 0){
-                iblk = balloc(mip->dev); // allocate a block
-                ibuf[lbk - 12] = iblk; // store the block number in the indirect block
+            //blk = ibuf[lbk - 12]; // get the block number
+            if (ibuf[lbk - 12] == 0){
+                ibuf[lbk - 12] = balloc(mip->dev); // allocate a block
+                //ibuf[lbk - 12] = iblk; // store the block number in the indirect block
                 put_block(mip->dev, mip->INODE.i_block[12], ibuf); // write the block back to disk
             }
+            blk = ibuf[lbk - 12];
         }
         else{    //double indirect blcoks 
+            printf("double indirect blocks\n");
             iblk = (lbk - (12 + 256) / 256);
             dblk = (lbk - (23 + 256) % 256);
             if (mip->INODE.i_block[13] == 0){    //if accesss pointer is empty, allocate a block and save its pointer 
                 mip->INODE.i_block[13] = balloc(mip->dev);  //allocate a block 
-                get_block(mip->dev, mip->INODE.i_block[13], ibuf);   //get block into memory 
+                get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);   //get block into memory 
                 bzero(ibuf, 256); // clear the block 
+                put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
             }
-            get_block(mip->dev, mip->INODE.i_block[13], ibuf); // get the block into memory 
+            get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf); // get the block into memory 
             if (ibuf[iblk] == 0){
                 ibuf[iblk] = balloc(mip->dev);
                 put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
@@ -85,11 +91,13 @@ int my_write(int fd, char buf[], int nbytes)
             blk = dbuf[dblk];
             //printf("allocate double indirect block blk=%d\n", blk);
         } 
+        memset(wbuf, 0, BLKSIZE);
         get_block(mip->dev, blk, wbuf);  //read disk block into wbuf[]
         char *cp = wbuf + startByte;    //cp points at startByte in wbuf[]
         int remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
         while (remain > 0){
-            *cp++ = *cq++;  //cq points at buf[]
+            //*cp++ = *cq++;  //cq points at buf[]
+            strcpy(cp, cq);
             nbytes--; remain--; //dec counts
             oftp->offset++; //dec counts 
             //if offset is greater than size increase file size 
