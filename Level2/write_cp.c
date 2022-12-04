@@ -44,16 +44,14 @@ int my_write(int fd, char buf[], int nbytes)
             {
                 mip->INODE.i_block[lbk] = balloc(mip->dev); // must allocate a block
             }
-        blk = mip->INODE.i_block[lbk];               // blk should be a disk block now
+        blk = mip->INODE.i_block[lbk]; // blk should be a disk block now
         } 
-        else if (lbk >= 12 && lbk < 256 + 12) 
-        {      // Indirect blocks
-            if (mip->INODE.i_block[12] == 0) 
-            {           // indirect block hasn't been made yet
+        else if (lbk >= 12 && lbk < 256 + 12) // Indirect blocks
+        {      
+            if (mip->INODE.i_block[12] == 0) // indirect block hasn't been made yet
+            {           
                 mip->INODE.i_block[12] = balloc(mip->dev); // allocate a block
-
-            // zero out block on disk
-                memset(dbuf, 0, BLKSIZE);
+                memset(dbuf, 0, BLKSIZE); // zero out block on disk
                 put_block(mip->dev, mip->INODE.i_block[12], dbuf);
                 mip->INODE.i_blocks++; // increase # of blocks
             }
@@ -67,7 +65,6 @@ int my_write(int fd, char buf[], int nbytes)
                 ibuf[lbk - 12] = balloc(mip->dev);
                 put_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf);
                 blk = ibuf[lbk - 12];
-                mip->INODE.i_blocks++;
             }
         } 
         else 
@@ -75,25 +72,19 @@ int my_write(int fd, char buf[], int nbytes)
             if (mip->INODE.i_block[13] == 0) 
             {
                 mip->INODE.i_block[13] = balloc(mip->dev); // allocate a block
-
-                // zero out block on disk
-                memset(dbuf, 0, BLKSIZE);
+                memset(dbuf, 0, BLKSIZE); // zero out block on disk
                 put_block(mip->dev, mip->INODE.i_block[13], dbuf);
-                mip->INODE.i_blocks++;
             }
 
             get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
-            lbk -= 256 - 12;
+            lbk -= (256 + 12);
             int dblk = ibuf[lbk / 256]; // double indirect block
 
             if (dblk == 0) 
             {
                 ibuf[lbk / 256] = balloc(mip->dev); // allocate a block
-
-                // zero out block on disk
-                memset(dbuf, 0, BLKSIZE);
+                memset(dbuf, 0, BLKSIZE); // zero out block on disk
                 put_block(mip->dev, dblk, dbuf);
-                mip->INODE.i_blocks++;
                 put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
             }
 
@@ -105,7 +96,6 @@ int my_write(int fd, char buf[], int nbytes)
                 ibuf[lbk % 256] = balloc(mip->dev);
                 put_block(mip->dev, dblk, (char *)ibuf);
                 blk = ibuf[lbk % 256];
-                mip->INODE.i_blocks++;
             }
         }
         // write to data block

@@ -67,7 +67,7 @@ int open_file(char *pathname, int mode)
 {
   int ino, i, pino, r, descriptor=-1;
   MINODE *mip, *pmip;
-  // OFT *open; not being used 
+  OFT *oftp; 
 
   if (pathname[0] == '/')
     dev = root->dev;
@@ -101,7 +101,8 @@ int open_file(char *pathname, int mode)
   }
 
   //allocate a FREE OpenFileTable(OFT) and fill in values 
-  OFT *oftp = (OFT *)malloc(sizeof(OFT)); //build the open fd 
+  oftp = (OFT *)malloc(sizeof(OFT)); //build the open fd 
+  
   oftp->mode = mode;  
   oftp->refCount = 1;
   oftp->mptr = mip;  

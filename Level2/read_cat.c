@@ -64,7 +64,7 @@ int my_read(int fd, char buf[], int nbytes)
       //printf("\nmyread: double indirect blocks\n");
       get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf); // get block into memory
       // kc mail man algorithm
-      lbk -= 256 -12;
+      lbk -= (256 - 12);
       blk = ibuf[lbk / 256];
       get_block(mip->dev, blk, (char *)buf13);
       blk = buf13[lbk % 256];
