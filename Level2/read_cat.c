@@ -42,7 +42,7 @@ int my_read(int fd, char buf[], int nbytes)
   int count = 0, lbk, startByte, blk, avil, remain, dblk;
   int ibuf[256], buf13[256], dbuf[256], ebuf[BLKSIZE];
   avil = mip->INODE.i_size - oftp->offset;
-  char *cq = buf;
+  char *cq = buf, *cp;
   char readbuf[BLKSIZE];
   
   while(nbytes && avil)
@@ -56,23 +56,24 @@ int my_read(int fd, char buf[], int nbytes)
     }
     else if(lbk >= 12 && lbk < 256 + 12) // indreact block
     {
-      printf("\nmyread: indirect blocks\n");
+      //printf("\nmyread: indirect blocks\n");
       get_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf); // get block into memory
       blk = ibuf[lbk - 12];
     }
     else{ // double indirect block
-      printf("\nmyread: double indirect blocks\n");
-      lbk -= 268;
-      get_block(mip->dev, mip->INODE.i_block[13], (char *)buf13);
-      dblk = buf13[lbk/256];
-      get_block(mip->dev, dblk, (char *)dbuf);
-      blk = dbuf[lbk % 256];
+      //printf("\nmyread: double indirect blocks\n");
+      get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf); // get block into memory
+      // kc mail man algorithm
+      lbk -= 256 -12;
+      blk = ibuf[lbk / 256];
+      get_block(mip->dev, blk, (char *)buf13);
+      blk = buf13[lbk % 256];
     }
     get_block(mip->dev, blk, readbuf);
-    char *cp = readbuf + startByte;
+    cp = readbuf + startByte;
     remain = BLKSIZE - startByte;
 
-    while (remain > 0){
+     while (remain > 0){
       if (nbytes <= avil && nbytes <= remain){
         strncpy(cq, cp, nbytes);
         oftp->offset = oftp->offset + nbytes;
@@ -97,14 +98,14 @@ int my_read(int fd, char buf[], int nbytes)
       }
       if (nbytes <= 0 || avil <= 0){
         break;
-    }
+      }
     }
   }
   // printf("--------------------------------------------\n");
   // printf("\n%s \n", buf);
-  printf("****************************************\n");
-  printf("myread: read %d char from file %d\n", count, fd);
-  printf("****************************************\n");
+  // printf("****************************************\n");
+  // printf("myread: read %d char from file %d\n", count, fd);
+  // printf("****************************************\n");
   return count; // Eventually: Return the actual number of bytes read
 }
 
