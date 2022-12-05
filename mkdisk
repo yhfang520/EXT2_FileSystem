@@ -4,3 +4,5 @@ sudo mke2fs -b 1024 mydisk 1440
 sudo mount mydisk /mnt
 (cd /mnt; sudo rm -rf 'lost+found')
 sudo umount /mnt
+
+curl https://eecs.wsu.edu/~cs360/samples/LEVEL2/disk2 --output mydisk
