@@ -14,12 +14,13 @@ int truncate(MINODE *mip)
 
   //Refernce by KC : )
   //iterate through blocks 
-  for (i=0; i < 15; i++){ //print all 15 i_block[] numbers; first 12 are DIRECT blocks 
+  for (i=0; i < 12; i++){ //print all 15 i_block[] numbers; first 12 are DIRECT blocks 
     printf("i_block[%d] = %d\n", i, ip->i_block[i]);
     if (ip->i_block[i] == 0)
       break; 
     bdalloc(dev, ip->i_block[i]);
-    bzero(ip->i_block, BLKSIZE);  //be zero if it's not empty 
+    ip->i_block[i] = 0;
+    // bzero(ip->i_block, BLKSIZE);  be zero if it's not empty 
   }
   
   if (ip->i_block[12] != 0){  //indirect blocks
@@ -58,6 +59,7 @@ int truncate(MINODE *mip)
   //set INODE's size to 0 and mark Minode[ ] dirty
   mip->INODE.i_size = 0;
   mip->dirty = 1; 
+  iput(mip);
 
   return 1;
 }
@@ -75,12 +77,12 @@ int open_file(char *pathname, int mode)
     dev = running->cwd->dev;
   
   //get pathname's inumber, minode pointer 
-  ino = getino(pathname, &dev);
+  ino = getino(pathname); // ino = getino(pathname, &dev);
 
   if (ino == 0){  //if file does not exist  
   printf("file not exist\n"); 
     creat_file(pathname); 
-    ino = getino(pathname, &dev); 
+    ino = getino(pathname); // ino = getino(pathname, &dev); 
   }
 
   mip = iget(dev, ino); //get the ino and mip of pathname  

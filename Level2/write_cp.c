@@ -96,8 +96,8 @@ int my_write(int fd, char buf[], int nbytes)
         remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
 
         while (remain > 0){
-            *cp++ = *cq++;  //cq points at buf[]
-            //strcpy(cp, cq);
+            //*cp++ = *cq++;  //cq points at buf[]
+            strcpy(cp, cq);
             nbytes--; remain--; //dec counts
             oftp->offset++; //dec counts 
             //if offset is greater than size increase file size 
@@ -121,20 +121,24 @@ int my_cp(char *src, char *dest)
     int n = 0; 
     char buf[1024];
     //Open the source file as a read, open the target file as a write
+    printf("\n*************before the open\n");
     int fd = open_file(src, 0);   //open src for read
     int gd = open_file(dest, 1);  //open dst for WR|CREAT
-
+    printf("\n*************after the open\n");
     if (gd < 0){
         printf("creating file \n");
         creat_file(dest);
         gd = open_file(dest, 1); 
     }
     // open src for R and dest for W
+    printf("\n*************before the loop\n");
+    memset(buf, 0, 1024);
     while (n = my_read(fd, buf, 1024)){
-        buf[n] = 0;
+        //buf[n] = 0;
         my_write(gd, buf, n);
         memset(buf, 0, 1024);
     }
+    printf("\n*************after the loop\n");
     close_file(fd);
     close_file(gd);
     return 0;

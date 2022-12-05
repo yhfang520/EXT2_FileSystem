@@ -128,8 +128,12 @@ int cat_file(char *pathname)
       if (mybuf[i] == '\\' && mybuf[i++] == 'n'){
         printf("\n");
       }
+      else
+      {
+        printf("%c",mybuf[i]);
+      }
     }
-    printf("%s", mybuf);
+    //printf("%s", mybuf);
   }
   
   close_file(fd);
