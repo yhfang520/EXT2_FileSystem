@@ -22,6 +22,7 @@ PROC    proc[NPROC], *running;
 MTABLE  mtable[NMTABLE];
 OFT     oft[NOFT];
 
+
 char gpath[128]; // global for tokenized components
 char *name[64];  // assume at most 64 components in pathname
 int   n;         // number of component strings
@@ -38,6 +39,7 @@ char line[128], cmd[32], pathname[128], parameter[128];
 #include "Level1/symlink.c"
 #include "Level2/open_close.c"
 #include "Level2/write_cp.c"
+#include "level3/mount_umount.c"
 
 int init()
 {
@@ -174,6 +176,8 @@ int main(int argc, char *argv[ ])
       my_cp(pathname, parameter);
     else if(strcmp(cmd, "cat")==0)
       cat_file(pathname);
+    else if(strcmp(cmd, "mount")==0)
+      mount(pathname, parameter);
     else if (strcmp(cmd, "quit")==0)
       quit();
 
