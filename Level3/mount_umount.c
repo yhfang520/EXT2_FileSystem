@@ -1,8 +1,6 @@
 /************* mount_umount.c file **************/
-
 #ifndef __MOUNTUMOUNT_C__
 #define __MOUNTUMOUNT_C__
-
 
 int mount(char *diskname, char *dest)
 {

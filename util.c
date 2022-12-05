@@ -195,6 +195,7 @@ int getino(char *pathname) // return ino of pathname
   MINODE *mip;
   MTABLE *mp; 
 
+
   printf("getino: pathname=%s\n", pathname);
   if (strcmp(pathname, "/")==0)
       return 2;   //return root ino = 2
@@ -222,16 +223,27 @@ int getino(char *pathname) // return ino of pathname
          return 0; 
       }
 
+      //To-do upward traversal
+
       ino = search(mip, name[i]);
 
-      if (!ino){
+      if (ino == 0){
          iput(mip);
          printf("name %s does not exist\n", name[i]);
-         return -1;
+         return 0;
       }
 
       iput(mip);  //realease current minode 
       mip = iget(dev, ino);   //switch to new minode 
+
+      //check downward cross mouting point 
+      if (mip->mounted){   //downward direction 
+         MTABLE *mtptr = mip->mptr;
+         dev = mtptr->dev;
+         iput(mip);  //release current mip
+         mip = iget(dev, 2);  //switch to mounting root 
+         ino = 2; 
+      }
 
       if (ino==2 && dev != rootdev){   //if not the initial device 
          if (i > 0){
