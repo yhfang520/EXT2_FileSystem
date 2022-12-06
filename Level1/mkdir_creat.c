@@ -25,7 +25,7 @@ int enter_name(MINODE *pip, int ino, char *name)
         get_block(pip->dev, ip->i_block[i], buf);    //get empty block 
         block_i = i; 
         dp = (DIR *)buf; 
-        cp = buf;
+        cp = buf; 
         blk = ip->i_block[i]; 
         printf("parent data blk[i] = %d\n", blk); 
 

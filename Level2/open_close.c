@@ -70,6 +70,7 @@ int open_file(char *pathname, int mode)
   int ino, i, pino, r, descriptor=-1;
   MINODE *mip, *pmip;
   OFT *oftp; 
+  int ofmode; 
 
   if (pathname[0] == '/')
     dev = root->dev;
@@ -82,7 +83,7 @@ int open_file(char *pathname, int mode)
   if (ino == 0){  //if file does not exist  
   printf("file not exist\n"); 
     creat_file(pathname); 
-    ino = getino(pathname); // ino = getino(pathname, &dev); 
+    ino = getino(pathname); //get its ino
   }
 
   mip = iget(dev, ino); //get the ino and mip of pathname  
@@ -104,6 +105,7 @@ int open_file(char *pathname, int mode)
 
   //allocate a FREE OpenFileTable(OFT) and fill in values 
   oftp = (OFT *)malloc(sizeof(OFT)); //build the open fd 
+  
   oftp->mode = mode;  
   oftp->refCount = 1;
   oftp->mptr = mip;  

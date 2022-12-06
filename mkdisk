@@ -5,4 +5,11 @@ sudo mount mydisk /mnt
 (cd /mnt; sudo rm -rf 'lost+found')
 sudo umount /mnt
 
+#disk2
 curl https://eecs.wsu.edu/~cs360/samples/LEVEL2/disk2 --output mydisk
+
+#check cp result under Linux
+sudo mount mydisk /mnt           
+sudo ls -l /mnt                   # should see all files
+sudo diff /mnt/huge /mnt/newhuge  # diff will show differences, if ANY
+sudo umount /mnt

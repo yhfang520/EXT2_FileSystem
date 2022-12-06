@@ -58,13 +58,13 @@ int my_read(int fd, char buf[], int nbytes)
     {
       //printf("\nmyread: indirect blocks\n");
       get_block(mip->dev, mip->INODE.i_block[12], (char *)ibuf); // get block into memory
-      blk = ibuf[lbk - 12];
+      blk = ibuf[lbk - 12]; // locate where is in the block 
     }
     else{ // double indirect block
       //printf("\nmyread: double indirect blocks\n");
       get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);  //get block into memory
       //kc mail man algorithm 11.3.1
-      lbk -= (12 + 256);
+      lbk -= (12 + 256); 
       blk = ibuf[lbk/256];
       get_block(mip->dev, blk, (char *)buf13);
       blk = buf13[lbk % 256];
@@ -74,21 +74,21 @@ int my_read(int fd, char buf[], int nbytes)
     remain = BLKSIZE - startByte;
 
     while (remain > 0){
-      if (nbytes <= avil && nbytes <= remain){
-        strncpy(cq, cp, nbytes);
-        oftp->offset = oftp->offset + nbytes;
-        count = count + nbytes;
-        avil = avil - nbytes;
-        nbytes = 0;
-        remain = remain - nbytes; 
-      } else if (avil <= remain && avil <= nbytes){
+      if (nbytes <= avil && nbytes <= remain){ // cheack if nbytes is less than avil and remain
+        strncpy(cq, cp, nbytes); // copy nbytes from cp to cq
+        oftp->offset = oftp->offset + nbytes; // update the offset with nbytes we read
+        count = count + nbytes; // update the count with nbytes we read 
+        avil = avil - nbytes; // update the availble with nbytes we read 
+        nbytes = 0; // reset nbytes to 0
+        remain = remain - nbytes; // update the remain with nbytes we read 
+      } else if (avil <= remain && avil <= nbytes){ // if availble is less than remain and nbytes 
         strncpy(cq, cp, avil);
         oftp->offset = oftp->offset + avil;
         count = count + avil;
         avil = 0;
         nbytes = nbytes - avil;
         remain = remain - avil; 
-      } else{
+      } else{ // if remain is less than avilable and nbytes
         strncpy(cq, cp, remain);
         oftp->offset = oftp->offset + remain;
         count = count + remain;

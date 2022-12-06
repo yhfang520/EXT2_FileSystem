@@ -29,12 +29,12 @@ int my_write(int fd, char buf[], int nbytes)
     OFT *oftp = running->fd[fd];
     MINODE *mip = oftp->mptr;
     char dbuf[1024];
-    int ibuf[256] = {0}, lbk = 0, startByte = 0, blk, remain, dblk;
+    int ibuf[256] = {0}, lbk = 0, startByte = 0, blk, remain, dblk, count = nbytes;
     char *cq = buf;
     char *cp;
     char wbuf[1024];
-    
     //printf("nbytes = %d\n", nbytes);
+    
     while (nbytes > 0){
         // compute logical block (lbk) and startbyte in lbk
         lbk = oftp->offset / BLKSIZE; // get the logical block number 
@@ -69,28 +69,27 @@ int my_write(int fd, char buf[], int nbytes)
                 mip->INODE.i_block[13] = balloc(mip->dev); // allocate a block
                 // zero out block on disk
                 memset(dbuf, 0, BLKSIZE);
-                put_block(mip->dev, mip->INODE.i_block[13], dbuf);
+                put_block(mip->dev, mip->INODE.i_block[13], dbuf); // put block back into memory 
             }
-            get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
-            dblk = ibuf[lbk / 256]; // double indirect block
+            get_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf); // get the data from the block
+            dblk = ibuf[lbk / 256]; // find where its located 1st
             if (dblk == 0) 
             {
                 ibuf[lbk / 256] = balloc(mip->dev); // allocate a block
                 // zero out block on disk
                 memset(dbuf, 0, BLKSIZE);
-                put_block(mip->dev, dblk, dbuf);
-                put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf);
+                put_block(mip->dev, dblk, dbuf); // put block back into memory
+                put_block(mip->dev, mip->INODE.i_block[13], (char *)ibuf); // write the data back to the buf 
             }
-            get_block(mip->dev, dblk, (char *)ibuf);
-            blk = ibuf[lbk % 256]; // second block
+            get_block(mip->dev, dblk, (char *)ibuf); // get the data from the block 
+            blk = ibuf[lbk % 256]; // second block 
             if (blk == 0) 
             {
-                ibuf[lbk % 256] = balloc(mip->dev);
-                put_block(mip->dev, dblk, (char *)ibuf);
-                blk = ibuf[lbk % 256];
+                ibuf[lbk % 256] = balloc(mip->dev); // allocate a block
+                put_block(mip->dev, dblk, (char *)ibuf); // wrtie the data back to the buf 
+                blk = ibuf[lbk % 256]; // find where is located 
             }
         }
-        
         get_block(mip->dev, blk, wbuf);  //read disk block into wbuf[]
         cp = wbuf + startByte;    //cp points at startByte in wbuf[]
         remain = BLKSIZE - startByte;   //number of BYTEs remain in this block 
@@ -121,24 +120,24 @@ int my_cp(char *src, char *dest)
     int n = 0; 
     char buf[1024];
     //Open the source file as a read, open the target file as a write
-    printf("\n*************before the open\n");
+    //printf("\n*************before the open\n");
     int fd = open_file(src, 0);   //open src for read
     int gd = open_file(dest, 1);  //open dst for WR|CREAT
-    printf("\n*************after the open\n");
+    //printf("\n*************after the open\n");
     if (gd < 0){
         printf("creating file \n");
         creat_file(dest);
         gd = open_file(dest, 1); 
     }
     // open src for R and dest for W
-    printf("\n*************before the loop\n");
+    //printf("\n*************before the loop\n");
     memset(buf, 0, 1024);
     while (n = my_read(fd, buf, 1024)){
         //buf[n] = 0;
         my_write(gd, buf, n);
         memset(buf, 0, 1024);
     }
-    printf("\n*************after the loop\n");
+    //printf("\n*************after the loop\n");
     close_file(fd);
     close_file(gd);
     return 0;
