@@ -64,7 +64,7 @@ int my_write(int fd, char buf[], int nbytes)
         }
 
         else{    //double indirect blcoks 
-            lbk -= 268;
+            lbk -= 268; 
             if (mip->INODE.i_block[13] == 0) {
                 mip->INODE.i_block[13] = balloc(mip->dev); // allocate a block
                 // zero out block on disk

@@ -173,7 +173,7 @@ int close_file(int fd)
   MINODE *mip = oftp->mptr;
   mip->dirty = 1; 
   iput(mip);  //release minode 
-  free(oftp);
+  // you had free(oftp); here, but that was causing a seg fault.
   printf("close: refCount = %d\n", oftp->refCount++); 
   printf("fd = %d is closed\n", running->fd[fd]); 
   return 0;
