@@ -210,7 +210,8 @@ int getino(char *pathname) // return ino of pathname
       ino = running->cwd->ino; 
    }
   mip = iget(dev, ino);         // because we iput(mip) later
-  
+  //mip->refCount++;  
+  //mip->refCount+=1;
   tokenize(pathname);
 
   for (i=0; i < n; i++){   //search for each component string 
@@ -227,23 +228,23 @@ int getino(char *pathname) // return ino of pathname
 
       ino = search(mip, name[i]);
 
-      if (ino == 0){
+      if (!ino){
          iput(mip);
          printf("name %s does not exist\n", name[i]);
-         return 0;
+         return -1;
       }
 
       iput(mip);  //realease current minode 
       mip = iget(dev, ino);   //switch to new minode 
 
-      //check downward cross mouting point 
-      if (mip->mounted){   //downward direction 
-         MTABLE *mtptr = mip->mptr;
-         dev = mtptr->dev;
-         iput(mip);  //release current mip
-         mip = iget(dev, 2);  //switch to mounting root 
-         ino = 2; 
-      }
+      // //check downward cross mouting point 
+      // if (mip->mounted){   //downward direction 
+      //    MTABLE *mtptr = mip->mptr;
+      //    dev = mtptr->dev;
+      //    iput(mip);  //release current mip
+      //    mip = iget(dev, 2);  //switch to mounting root 
+      //    ino = 2; 
+      // }
 
       if (ino==2 && dev != rootdev){   //if not the initial device 
          if (i > 0){
