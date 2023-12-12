@@ -1,14 +1,11 @@
 # EXT2 File System 
 
 ![](https://img.shields.io/badge/Difficulty-Hard-lightgrey.svg)  ![](https://img.shields.io/badge/Ubuntu-20.04-yellow.svg) <br>
---------
+
 Lecture book: Systems Programming in Unix/Linux
 
----
-**Course** : Systems Programming C/C++
-
 ----
-Design and implement a Linux-compatible EXT2 file system.
+Design and implement a binary tree to simulate the Unix/Linux file system tree, which supports pwd, ls, cd, mkdir, rmdir, creat, rm operatiobns as in a real file system. 
 
 ## Dependencis:
 gcc
